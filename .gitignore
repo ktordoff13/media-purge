@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.angular/
+coverage/
+*.log
+.DS_Store
+/config/
+*.sqlite
+*.db
+.env
+.env.local
