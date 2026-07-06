@@ -1,0 +1,58 @@
+.shell {
+  height: 100%;
+}
+
+.sidenav {
+  width: 232px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px 12px;
+
+  .brand-icon {
+    color: var(--mat-sys-primary);
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .brand-name {
+    font: var(--mat-sys-title-medium);
+  }
+
+  .brand-tag {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.active-link {
+  --mat-list-list-item-container-color: color-mix(in srgb, var(--mat-sys-primary) 18%, transparent);
+  border-radius: 12px;
+}
+
+mat-nav-list a {
+  border-radius: 12px;
+  margin: 2px 8px;
+}
+
+.api-docs-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  color: var(--mat-sys-on-surface-variant);
+  text-decoration: none;
+  font: var(--mat-sys-label-large);
+
+  &:hover {
+    color: var(--mat-sys-primary);
+  }
+}
