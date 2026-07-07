@@ -10,6 +10,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../core/api.service';
+import { DryRunStateService } from '../core/dry-run-state.service';
 import {
   AiSettings,
   ArrSettings,
@@ -328,6 +329,7 @@ interface EditableSource extends Partial<MediaSource> {
 export class SettingsPage implements OnInit {
   private readonly api = inject(ApiService);
   private readonly snack = inject(MatSnackBar);
+  private readonly dryRunState = inject(DryRunStateService);
 
   readonly sources = signal<EditableSource[]>([]);
   readonly providerTypes = signal<ProviderType[]>([]);
@@ -421,7 +423,10 @@ export class SettingsPage implements OnInit {
   saveGeneral(): void {
     const g = this.general();
     if (!g) return;
-    this.api.saveGeneral(g).subscribe(() => this.snack.open('General settings saved', 'OK', { duration: 3000 }));
+    this.api.saveGeneral(g).subscribe(() => {
+      this.snack.open('General settings saved', 'OK', { duration: 3000 });
+      this.dryRunState.refresh();
+    });
   }
 
   // Path mappings

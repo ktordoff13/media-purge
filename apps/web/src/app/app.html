@@ -21,6 +21,16 @@
     </a>
   </mat-sidenav>
   <mat-sidenav-content>
+    @if (dryRunState.dryRun() === false) {
+      <a
+        class="live-banner"
+        routerLink="/settings"
+        matTooltip="Dry-run is off. Approvals move real files to the recycle bin (restorable until the retention window lapses). Click to change in Settings."
+      >
+        <mat-icon inline>warning</mat-icon>
+        LIVE MODE — deletions are real
+      </a>
+    }
     <router-outlet />
   </mat-sidenav-content>
 </mat-sidenav-container>

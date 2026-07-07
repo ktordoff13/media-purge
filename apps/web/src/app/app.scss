@@ -56,3 +56,25 @@ mat-nav-list a {
     color: var(--mat-sys-primary);
   }
 }
+
+.live-banner {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font: var(--mat-sys-label-large);
+  letter-spacing: 0.06em;
+  color: var(--mat-sys-on-error-container);
+  background: var(--mat-sys-error-container);
+  border-bottom: 1px solid color-mix(in srgb, var(--mat-sys-error) 40%, transparent);
+  text-decoration: none;
+  cursor: pointer;
+
+  &:hover {
+    background: color-mix(in srgb, var(--mat-sys-error) 28%, var(--mat-sys-error-container));
+  }
+}
