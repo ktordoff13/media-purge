@@ -4,13 +4,26 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Scan } from '../database/entities/scan.entity';
 import { MediaItem } from '../database/entities/media-item.entity';
+import { MediaSource } from '../database/entities/media-source.entity';
 import { Recommendation } from '../database/entities/recommendation.entity';
 import { ActivityService } from '../activity/activity.service';
+import { SettingsService } from '../settings/settings.service';
 
 class LibraryStatDto {
   @ApiProperty() libraryName: string;
   @ApiProperty() itemCount: number;
   @ApiProperty() sizeBytes: number;
+}
+
+class SetupStatusDto {
+  @ApiProperty({ description: 'Configured media sources.' }) sources: number;
+  @ApiProperty({ description: 'Completed scans so far.' }) completedScans: number;
+  @ApiProperty({ description: 'Configured path mappings.' }) pathMappings: number;
+  @ApiProperty() radarrEnabled: boolean;
+  @ApiProperty() sonarrEnabled: boolean;
+  @ApiProperty() dryRun: boolean;
+  @ApiProperty({ nullable: true, type: String }) scanCron: string | null;
+  @ApiProperty() aiEnabled: boolean;
 }
 
 class DashboardDto {
@@ -29,9 +42,39 @@ export class StatsController {
   constructor(
     @InjectRepository(Scan) private readonly scans: Repository<Scan>,
     @InjectRepository(MediaItem) private readonly items: Repository<MediaItem>,
+    @InjectRepository(MediaSource) private readonly sources: Repository<MediaSource>,
     @InjectRepository(Recommendation) private readonly recs: Repository<Recommendation>,
     private readonly activity: ActivityService,
+    private readonly settings: SettingsService,
   ) {}
+
+  @Get('setup')
+  @ApiOperation({
+    summary: 'Setup progress for the first-run checklist',
+    description: 'What is configured so far — the UI uses this to guide new installs through source, path-mapping, *arr, and first-scan setup.',
+  })
+  @ApiOkResponse({ type: SetupStatusDto })
+  async setup(): Promise<SetupStatusDto> {
+    const [sources, completedScans, general, mappings, radarr, sonarr, ai] = await Promise.all([
+      this.sources.count(),
+      this.scans.countBy({ status: 'completed' }),
+      this.settings.get('general'),
+      this.settings.get('pathMappings'),
+      this.settings.get('radarr'),
+      this.settings.get('sonarr'),
+      this.settings.get('ai'),
+    ]);
+    return {
+      sources,
+      completedScans,
+      pathMappings: mappings.length,
+      radarrEnabled: radarr.enabled,
+      sonarrEnabled: sonarr.enabled,
+      dryRun: general.dryRun,
+      scanCron: general.scanCron,
+      aiEnabled: ai.enabled,
+    };
+  }
 
   @Get('dashboard')
   @ApiOperation({ summary: 'Aggregate numbers for the dashboard' })

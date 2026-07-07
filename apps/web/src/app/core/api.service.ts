@@ -24,6 +24,7 @@ import {
   Rule,
   Scan,
   SecuritySettings,
+  SetupStatus,
 } from './models';
 
 const BASE = '/api/v1';
@@ -40,6 +41,9 @@ export class ApiService {
   // Dashboard / scans
   dashboard(): Observable<Dashboard> {
     return this.http.get<Dashboard>(`${BASE}/stats/dashboard`);
+  }
+  setupStatus(): Observable<SetupStatus> {
+    return this.http.get<SetupStatus>(`${BASE}/stats/setup`);
   }
   startScan(): Observable<Scan> {
     return this.http.post<Scan>(`${BASE}/scans`, {});

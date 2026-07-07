@@ -4,6 +4,7 @@ import { Recommendation } from '../database/entities/recommendation.entity';
 import { MediaItem } from '../database/entities/media-item.entity';
 import { ProtectedItem } from '../database/entities/protected-item.entity';
 import { Scan } from '../database/entities/scan.entity';
+import { MediaSource } from '../database/entities/media-source.entity';
 import { CleanupModule } from '../cleanup/cleanup.module';
 import {
   ProtectedItemsController,
@@ -13,7 +14,7 @@ import { StatsController } from './stats.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Recommendation, MediaItem, ProtectedItem, Scan]),
+    TypeOrmModule.forFeature([Recommendation, MediaItem, ProtectedItem, Scan, MediaSource]),
     CleanupModule,
   ],
   controllers: [RecommendationsController, ProtectedItemsController, StatsController],

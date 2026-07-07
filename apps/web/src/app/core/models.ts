@@ -168,6 +168,17 @@ export interface LibraryStat {
   sizeBytes: number;
 }
 
+export interface SetupStatus {
+  sources: number;
+  completedScans: number;
+  pathMappings: number;
+  radarrEnabled: boolean;
+  sonarrEnabled: boolean;
+  dryRun: boolean;
+  scanCron: string | null;
+  aiEnabled: boolean;
+}
+
 export interface Dashboard {
   lastScan: Scan | null;
   openRecommendations: number;

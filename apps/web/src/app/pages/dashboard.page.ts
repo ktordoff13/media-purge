@@ -7,7 +7,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DatePipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
-import { Dashboard } from '../core/models';
+import { Dashboard, SetupStatus } from '../core/models';
 import { BytesPipe, TimeAgoPipe } from '../core/pipes';
 
 @Component({
@@ -28,6 +28,90 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
 
       @if (scanning()) {
         <mat-progress-bar mode="indeterminate" class="scan-bar" />
+      }
+
+      @if (showSetup() && setup(); as s) {
+        <div class="setup-card">
+          <div class="setup-head">
+            <div>
+              <div class="setup-title"><mat-icon>rocket_launch</mat-icon> Get set up</div>
+              <div class="muted">A few connections make cleanup safe and useful. Here's what matters and why.</div>
+            </div>
+            @if (coreDone(s)) {
+              <button matButton (click)="dismissSetup()">Dismiss</button>
+            }
+          </div>
+
+          <div class="setup-step" [class.done]="s.sources > 0">
+            <mat-icon>{{ s.sources > 0 ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            <div class="step-body">
+              <div class="step-title">Connect your media server</div>
+              <div class="step-why muted">
+                Plex or Jellyfin — this is what gets scanned. Plex needs an X-Plex-Token; Jellyfin
+                needs an <b>admin</b> API key so watch history covers every user in the house.
+              </div>
+            </div>
+            <a matButton routerLink="/settings">Settings</a>
+          </div>
+
+          <div class="setup-step" [class.done]="s.pathMappings > 0">
+            <mat-icon>{{ s.pathMappings > 0 ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            <div class="step-body">
+              <div class="step-title">Map file paths</div>
+              <div class="step-why muted">
+                Your media server and this container usually mount the same share at different
+                paths. Cleanup refuses to touch files it can't find — mappings translate the
+                server's paths into this container's. Skip only if both containers mount media
+                identically.
+              </div>
+            </div>
+            <a matButton routerLink="/settings">Settings</a>
+          </div>
+
+          <div class="setup-step" [class.done]="s.radarrEnabled || s.sonarrEnabled">
+            <mat-icon>{{ s.radarrEnabled || s.sonarrEnabled ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            <div class="step-body">
+              <div class="step-title">Connect Sonarr / Radarr <span class="optional-tag">if you run them</span></div>
+              <div class="step-why muted">
+                Important: if the *arrs monitor your library, they'll quietly <b>re-download
+                everything you delete</b>. When connected, Media Purge unmonitors items on
+                approval so deleted stays deleted. Skip entirely if you don't use them.
+              </div>
+            </div>
+            <a matButton routerLink="/settings">Settings</a>
+          </div>
+
+          <div class="setup-step" [class.done]="s.completedScans > 0">
+            <mat-icon>{{ s.completedScans > 0 ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            <div class="step-body">
+              <div class="step-title">Run your first scan</div>
+              <div class="step-why muted">
+                Read-only against your server. It snapshots your libraries and produces
+                recommendations, each explained by the rules that matched it.
+              </div>
+            </div>
+            <button matButton (click)="scan()" [disabled]="scanning() || s.sources === 0">Scan now</button>
+          </div>
+
+          <div class="setup-step" [class.done]="!s.dryRun">
+            <mat-icon>{{ !s.dryRun ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon>
+            <div class="step-body">
+              <div class="step-title">Review in dry-run, then go live</div>
+              <div class="step-why muted">
+                Dry-run is ON by default: approvals only log what <i>would</i> happen. Approve a
+                few items, confirm the file paths in the Activity log look right, then disable
+                dry-run. Even live, deletions sit in the recycle bin for the retention window.
+              </div>
+            </div>
+            <a matButton routerLink="/settings">Settings</a>
+          </div>
+
+          <div class="setup-extras muted">
+            Also worth a look: a scan <a routerLink="/settings">schedule</a> (cron), appdata
+            <a routerLink="/maintenance">maintenance</a> to shrink server caches, and the optional
+            local <a routerLink="/settings">AI regret check</a>.
+          </div>
+        </div>
       }
 
       @if (data(); as d) {
@@ -96,6 +180,24 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
   `,
   styles: `
     .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+    .setup-card { border-radius: 16px; background: var(--mat-sys-surface-container); padding: 20px 24px;
+      margin-bottom: 24px; border: 1px solid var(--mat-sys-outline-variant); }
+    .setup-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 8px; }
+    .setup-title { display: flex; align-items: center; gap: 8px; font: var(--mat-sys-title-medium);
+      color: var(--mat-sys-primary); }
+    .setup-step { display: flex; gap: 14px; align-items: flex-start; padding: 10px 0;
+      border-top: 1px solid var(--mat-sys-outline-variant); }
+    .setup-step mat-icon { margin-top: 2px; color: var(--mat-sys-on-surface-variant); flex: none; }
+    .setup-step.done mat-icon { color: var(--mat-sys-tertiary); }
+    .setup-step.done .step-title { text-decoration: line-through; opacity: 0.7; }
+    .step-body { flex: 1; }
+    .step-title { font: var(--mat-sys-title-small); }
+    .step-why { font: var(--mat-sys-body-small); margin-top: 2px; max-width: 640px; line-height: 1.45; }
+    .optional-tag { font: var(--mat-sys-label-small); border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 999px; padding: 1px 8px; margin-left: 6px; color: var(--mat-sys-on-surface-variant);
+      text-decoration: none; display: inline-block; }
+    .setup-extras { font: var(--mat-sys-body-small); padding-top: 10px;
+      border-top: 1px solid var(--mat-sys-outline-variant); }
     .scan-bar { margin-bottom: 16px; border-radius: 4px; }
     .stat-value-small { font: var(--mat-sys-title-large); margin-top: 10px; }
     .section-title { font: var(--mat-sys-title-medium); margin: 32px 0 12px; }
@@ -115,6 +217,8 @@ export class DashboardPage implements OnInit, OnDestroy {
   private readonly snack = inject(MatSnackBar);
 
   readonly data = signal<Dashboard | null>(null);
+  readonly setup = signal<SetupStatus | null>(null);
+  readonly setupDismissed = signal(localStorage.getItem('mp.setupDismissed') === '1');
   readonly scanning = signal(false);
   readonly maxLibBytes = signal(1);
   private pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -127,7 +231,23 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.stopPolling();
   }
 
+  showSetup(): boolean {
+    const s = this.setup();
+    if (!s || this.setupDismissed()) return false;
+    return true;
+  }
+
+  coreDone(s: SetupStatus): boolean {
+    return s.sources > 0 && s.completedScans > 0;
+  }
+
+  dismissSetup(): void {
+    localStorage.setItem('mp.setupDismissed', '1');
+    this.setupDismissed.set(true);
+  }
+
   refresh(): void {
+    this.api.setupStatus().subscribe((s) => this.setup.set(s));
     this.api.dashboard().subscribe((d) => {
       this.data.set(d);
       this.maxLibBytes.set(Math.max(1, ...d.libraries.map((l) => l.sizeBytes)));
