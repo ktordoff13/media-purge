@@ -1,5 +1,5 @@
 {
-  "name": "media-review",
+  "name": "media-purge",
   "version": "0.1.0",
   "private": true,
   "description": "Rule-based media cleanup utility for Plex on unraid — scan, recommend, and safely reclaim storage.",

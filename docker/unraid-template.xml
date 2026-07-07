@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <Container version="2">
-  <Name>media-review</Name>
-  <Repository>ktordoff/media-review:latest</Repository>
-  <Registry>https://hub.docker.com/r/ktordoff/media-review</Registry>
+  <Name>media-purge</Name>
+  <Repository>ktordoff/media-purge:latest</Repository>
+  <Registry>https://hub.docker.com/r/ktordoff/media-purge</Registry>
   <Network>bridge</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/ktordoff/media-review/issues</Support>
-  <Project>https://github.com/ktordoff/media-review</Project>
+  <Support>https://github.com/ktordoff/media-purge/issues</Support>
+  <Project>https://github.com/ktordoff/media-purge</Project>
   <Overview>
     Rule-based media cleanup for Plex and Jellyfin. Scans your libraries, recommends what to
     delete (never watched, watched years ago, duplicates, low quality, dead series...) with a
@@ -19,12 +19,13 @@
   </Overview>
   <Category>MediaApp:Other Tools:Utilities</Category>
   <WebUI>http://[IP]:[PORT:8484]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/ktordoff/media-review/main/docs/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/ktordoff/media-purge/main/docs/icon.png</Icon>
   <ExtraParams/>
   <PostArgs/>
   <Config Name="WebUI Port" Target="8484" Default="8484" Mode="tcp" Description="Web UI and API port" Type="Port" Display="always" Required="true" Mask="false">8484</Config>
-  <Config Name="Config" Target="/config" Default="/mnt/user/appdata/media-review" Mode="rw" Description="Database and settings" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/media-review</Config>
+  <Config Name="Config" Target="/config" Default="/mnt/user/appdata/media-purge" Mode="rw" Description="Database and settings" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/media-purge</Config>
   <Config Name="Media" Target="/media" Default="/mnt/user/media" Mode="rw" Description="Your media share. Must be read-write for cleanup to work. Add a path mapping in Settings if your media server mounts this share at a different path." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/media</Config>
-  <Config Name="Recycle Bin" Target="/recycle-bin" Default="/mnt/user/media/.media-review-bin" Mode="rw" Description="Where approved deletions wait out the retention window. Keep it on the SAME share as your media so moves are instant instead of copies." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/media/.media-review-bin</Config>
+  <Config Name="Recycle Bin" Target="/recycle-bin" Default="/mnt/user/media/.media-purge-bin" Mode="rw" Description="Where approved deletions wait out the retention window. Keep it on the SAME share as your media so moves are instant instead of copies." Type="Path" Display="always" Required="true" Mask="false">/mnt/user/media/.media-purge-bin</Config>
   <Config Name="Plex Appdata (optional)" Target="/plex-appdata" Default="" Mode="rw" Description="Optional: mount your Plex appdata to enable the PhotoTranscoder cache purge (often frees 50-100+ GB). Point Settings -&gt; Appdata paths at /plex-appdata/Library/Application Support/Plex Media Server." Type="Path" Display="advanced" Required="false" Mask="false"/>
+  <Config Name="Jellyfin Appdata (optional)" Target="/jellyfin-appdata" Default="" Mode="rw" Description="Optional: mount your Jellyfin config dir (the one containing cache/) to enable the on-disk cache purge with dry-run size estimates. Point Settings -&gt; Appdata paths at /jellyfin-appdata." Type="Path" Display="advanced" Required="false" Mask="false"/>
 </Container>

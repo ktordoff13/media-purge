@@ -45,7 +45,8 @@ Optional:
 - **Schedule** — cron expression in Settings → General (e.g. `0 3 * * 0` = Sundays 03:00).
 - **Radarr/Sonarr** — Settings → Integrations; approved items are unmonitored so they don't
   get re-downloaded.
-- **Maintenance** — the Maintenance page can purge Plex's PhotoTranscoder cache (needs the
-  appdata mount + Settings → Appdata paths) and trigger Plex/Jellyfin housekeeping tasks.
+- **Maintenance** — the Maintenance page can purge Plex's PhotoTranscoder cache and Jellyfin's
+  `cache/` directory on disk (each needs its appdata mounted + Settings → Appdata paths) and
+  trigger Plex/Jellyfin server-side housekeeping tasks, which need no mounts at all.
 - **API** — full OpenAPI docs at `http://<host>:8484/api/docs`. Set an API key under
   Settings → Security if the container is reachable beyond your LAN.

@@ -33,7 +33,7 @@ export class ActivityController {
   @ApiOperation({ summary: 'Export the full activity log as CSV' })
   @ApiOkResponse({ description: 'CSV file', type: String })
   @Header('Content-Type', 'text/csv')
-  @Header('Content-Disposition', 'attachment; filename="media-review-activity.csv"')
+  @Header('Content-Disposition', 'attachment; filename="media-purge-activity.csv"')
   async exportCsv(): Promise<string> {
     const { items } = await this.activity.find({ limit: 100_000, offset: 0 });
     const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;

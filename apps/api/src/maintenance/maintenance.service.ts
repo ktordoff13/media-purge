@@ -26,6 +26,7 @@ interface JfTask {
 }
 
 const PLEX_PHOTO_TRANSCODER = 'Cache/PhotoTranscoder';
+const JELLYFIN_CACHE_DIR = 'cache';
 
 /**
  * ImageMaid-style server maintenance: shrink the media server's appdata by
@@ -68,9 +69,15 @@ export class MaintenanceService {
         { key: 'empty-trash', name: 'Empty trash', description: 'Empties the trash in every library section.', filesystem: false, available: true },
       ];
     }
-    // Jellyfin: everything runs through its own scheduled-tasks API.
     return [
-      { key: 'clean-cache', name: 'Clean cache', description: 'Runs Jellyfin’s "Clean Cache Directory" task (transcoded images, temp metadata).', filesystem: false, available: true },
+      needsAppdata({
+        key: 'cache-dir-purge',
+        name: 'Purge cache directory (disk)',
+        description:
+          'Deletes the contents of the cache/ folder in Jellyfin’s config dir directly on disk — regenerable images and transcode leftovers. Reports exactly how much space it frees; use this over the API task when you want dry-run size estimates.',
+        filesystem: true,
+      }),
+      { key: 'clean-cache', name: 'Clean cache (server task)', description: 'Runs Jellyfin’s "Clean Cache Directory" task (transcoded images, temp metadata).', filesystem: false, available: true },
       { key: 'clean-transcodes', name: 'Clean transcode directory', description: 'Runs Jellyfin’s "Clean Transcode Directory" task.', filesystem: false, available: true },
       { key: 'optimize-db', name: 'Optimize database', description: 'Runs Jellyfin’s database optimization/vacuum task.', filesystem: false, available: true },
     ];
@@ -117,6 +124,10 @@ export class MaintenanceService {
   }
 
   private async runJellyfin(source: MediaSource, operation: string) {
+    if (operation === 'cache-dir-purge') {
+      const appdata = (await this.settings.get('maintenance')).appdataPaths[String(source.id)];
+      return this.purgeDirectory(source, path.join(appdata, JELLYFIN_CACHE_DIR), 'Jellyfin cache directory');
+    }
     const keyByOp: Record<string, string> = {
       'clean-cache': 'DeleteCacheFiles',
       'clean-transcodes': 'DeleteTranscodeFiles',

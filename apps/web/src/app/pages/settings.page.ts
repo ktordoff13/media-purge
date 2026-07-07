@@ -212,9 +212,10 @@ interface EditableSource extends Partial<MediaSource> {
           <div class="tab-body">
             <p class="muted explain">
               To let Maintenance purge image caches from disk, mount each server's appdata into this
-              container and enter the path here (e.g. Plex:
-              <code>/plex-appdata/Library/Application Support/Plex Media Server</code>). API-based
-              maintenance tasks work without this.
+              container and enter the path here. Plex: the folder containing <code>Cache/</code>, e.g.
+              <code>/plex-appdata/Library/Application Support/Plex Media Server</code>. Jellyfin: its
+              config dir — the folder containing <code>cache/</code>, e.g. <code>/jellyfin-appdata</code>.
+              API-based maintenance tasks work without this.
             </p>
             @for (source of sources(); track source.id) {
               @if (source.id && maintenanceSettings(); as ms) {

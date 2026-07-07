@@ -1,4 +1,4 @@
-# Media Review
+# Media Purge
 
 **Rule-based media cleanup for Plex & Jellyfin.** Scan your libraries, get explainable
 recommendations for what to delete (never watched, watched years ago, duplicates, low quality,
@@ -29,13 +29,13 @@ every action is written to a permanent activity log: *what* was deleted, *when*,
 ## Quick start (Docker)
 
 ```bash
-docker build -f docker/Dockerfile -t media-review .
-docker run -d --name media-review \
+docker build -f docker/Dockerfile -t media-purge .
+docker run -d --name media-purge \
   -p 8484:8484 \
-  -v /mnt/user/appdata/media-review:/config \
+  -v /mnt/user/appdata/media-purge:/config \
   -v /mnt/user/media:/media \
-  -v /mnt/user/media/.media-review-bin:/recycle-bin \
-  media-review
+  -v /mnt/user/media/.media-purge-bin:/recycle-bin \
+  media-purge
 ```
 
 Open `http://<host>:8484`, add your server under **Settings → Media sources**, set **path

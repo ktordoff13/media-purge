@@ -13,7 +13,7 @@ async function bootstrap() {
   app.enableCors(); // LAN tool; the Angular dev server runs on another port
 
   const config = new DocumentBuilder()
-    .setTitle('Media Review API')
+    .setTitle('Media Purge API')
     .setDescription(
       'Rule-based media cleanup for Plex and Jellyfin. Scan libraries, get explainable deletion ' +
         'recommendations, and reclaim storage through a staged pipeline: approve → recycle bin → purge. ' +
@@ -25,12 +25,12 @@ async function bootstrap() {
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document, {
-    customSiteTitle: 'Media Review API',
+    customSiteTitle: 'Media Purge API',
     jsonDocumentUrl: 'api/docs-json',
   });
 
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);
-  new Logger('Bootstrap').log(`Media Review API on http://localhost:${port} (docs at /api/docs)`);
+  new Logger('Bootstrap').log(`Media Purge API on http://localhost:${port} (docs at /api/docs)`);
 }
 void bootstrap();

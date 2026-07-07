@@ -18,9 +18,9 @@ RUN npm prune --omit=dev --workspace apps/api
 
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM node:24-alpine
-LABEL org.opencontainers.image.title="Media Review" \
+LABEL org.opencontainers.image.title="Media Purge" \
       org.opencontainers.image.description="Rule-based media cleanup for Plex & Jellyfin — scan, recommend, reclaim storage safely." \
-      org.opencontainers.image.source="https://github.com/ktordoff/media-review"
+      org.opencontainers.image.source="https://github.com/ktordoff/media-purge"
 
 ENV NODE_ENV=production \
     CONFIG_DIR=/config \

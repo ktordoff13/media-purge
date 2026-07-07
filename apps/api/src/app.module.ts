@@ -27,7 +27,7 @@ const webDist = process.env.WEB_DIST ?? join(__dirname, '..', '..', 'web', 'dist
   imports: [
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
-      database: join(CONFIG_DIR, 'media-review.db'),
+      database: join(CONFIG_DIR, 'media-purge.db'),
       autoLoadEntities: true,
       // v1 ships with synchronize on SQLite; swap for generated migrations
       // once the schema stabilizes.

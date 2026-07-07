@@ -42,7 +42,7 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
           <div class="stat-tile good">
             <div class="stat-label">Space saved so far</div>
             <div class="stat-value">{{ d.spaceSavedBytes | bytes }}</div>
-            <div class="stat-hint">purged via Media Review</div>
+            <div class="stat-hint">purged via Media Purge</div>
           </div>
           <div class="stat-tile">
             <div class="stat-label">Library size</div>
