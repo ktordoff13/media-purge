@@ -69,7 +69,7 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
         <div class="total muted">
           {{ recs().length }} items · {{ totalBytes() | bytes }} total
         </div>
-        @if (status === 'open') {
+        @if (status === 'open' && aiEnabled()) {
           <button matButton (click)="askAi()" matTooltip="Ask your local AI to flag items you might regret deleting — just for fun, never changes scores">
             <mat-icon>psychology</mat-icon> AI regret check
           </button>
@@ -256,8 +256,12 @@ export class RecommendationsPage implements OnInit {
       .reduce((sum, r) => sum + Number(r.sizeBytes), 0),
   );
 
+  readonly aiEnabled = signal(false);
+
   ngOnInit(): void {
     this.load();
+    // The AI advisor is strictly opt-in; hide its UI entirely unless enabled.
+    this.api.aiSettings().subscribe((a) => this.aiEnabled.set(a.enabled));
   }
 
   load(): void {
