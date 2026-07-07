@@ -123,6 +123,9 @@ export class ApiService {
   testSource(id: number): Observable<ConnectionTestResult> {
     return this.http.post<ConnectionTestResult>(`${BASE}/sources/${id}/test`, {});
   }
+  testSourceConfig(config: Partial<MediaSource>): Observable<ConnectionTestResult> {
+    return this.http.post<ConnectionTestResult>(`${BASE}/sources/test`, config);
+  }
   libraries(sourceId: number): Observable<RemoteLibrary[]> {
     return this.http.get<RemoteLibrary[]>(`${BASE}/sources/${sourceId}/libraries`);
   }

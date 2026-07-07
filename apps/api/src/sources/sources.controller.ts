@@ -55,6 +55,17 @@ export class SourcesController {
     return this.repo.save(this.repo.create({ excludedLibraryIds: [], enabled: true, ...dto }));
   }
 
+  @Post('test')
+  @ApiOperation({
+    summary: 'Test a connection without saving',
+    description: 'Used by the add-source form to validate URL and token before the source exists.',
+  })
+  @ApiOkResponse({ type: ConnectionTestResultDto })
+  testUnsaved(@Body() dto: CreateSourceDto): Promise<ConnectionTestResultDto> {
+    const source = this.repo.create({ excludedLibraryIds: [], enabled: true, ...dto });
+    return this.registry.get(dto.type).testConnection(source);
+  }
+
   @Put(':id')
   @ApiOperation({ summary: 'Update a media source' })
   async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSourceDto) {

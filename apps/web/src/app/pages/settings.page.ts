@@ -88,8 +88,10 @@ interface EditableSource extends Partial<MediaSource> {
                     </span>
                   }
                   <span class="spacer"></span>
+                  <button matButton (click)="testSource(source)" [disabled]="!source.baseUrl || !source.token">
+                    <mat-icon>network_check</mat-icon> Test
+                  </button>
                   @if (source.id) {
-                    <button matButton (click)="testSource(source)"><mat-icon>network_check</mat-icon> Test</button>
                     <button matButton class="danger" (click)="deleteSource(source)"><mat-icon>delete</mat-icon> Remove</button>
                   }
                   <button matButton="filled" (click)="saveSource(source)">
@@ -344,14 +346,35 @@ export class SettingsPage implements OnInit {
   }
 
   testSource(source: EditableSource): void {
-    if (!source.id) return;
-    source.testResult = 'Testing…';
-    this.api.testSource(source.id).subscribe((res) => {
-      source.testOk = res.ok;
-      source.testResult = res.ok
-        ? `✓ ${res.serverName ?? 'Connected'} (${res.version ?? ''})`
-        : `✗ ${res.message}`;
+    this.setTestResult(source, undefined, 'Testing…');
+    // Saved sources test by id; unsaved ones send the form values directly.
+    const request = source.id
+      ? this.api.testSource(source.id)
+      : this.api.testSourceConfig({
+          name: source.name || 'unsaved',
+          type: source.type,
+          baseUrl: source.baseUrl,
+          token: source.token,
+        });
+    request.subscribe({
+      next: (res) =>
+        this.setTestResult(
+          source,
+          res.ok,
+          res.ok ? `✓ ${res.serverName ?? 'Connected'} ${res.version ?? ''}` : `✗ ${res.message}`,
+        ),
+      error: (err) => this.setTestResult(source, false, `✗ ${this.errMsg(err)}`),
     });
+  }
+
+  /**
+   * Test state lives on the row object, so re-emit the signal — the app is
+   * zoneless and a bare property mutation would never reach the template.
+   */
+  private setTestResult(source: EditableSource, ok: boolean | undefined, message: string): void {
+    source.testOk = ok;
+    source.testResult = message;
+    this.sources.update((list) => [...list]);
   }
 
   deleteSource(source: EditableSource): void {
