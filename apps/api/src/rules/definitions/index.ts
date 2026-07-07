@@ -33,25 +33,6 @@ const watchedLongAgo: CleanupRule = {
   },
 };
 
-const abandonedWatch: CleanupRule = {
-  key: 'abandoned-watch',
-  name: 'Started but abandoned',
-  description:
-    'Someone started it, got less than the threshold through, and has not come back — you tried it and gave up.',
-  defaultParams: { maxProgressPct: 50, minIdleDays: 180, points: 20 },
-  requires: ['watchProgress'],
-  evaluate(item, ctx) {
-    if (item.watchProgress == null || item.watchProgress <= 0) return null;
-    if (item.watchProgress * 100 >= ctx.params.maxProgressPct) return null;
-    const idle = daysSince(item.lastPlayedAt, ctx.now);
-    if (idle == null || idle < ctx.params.minIdleDays) return null;
-    return {
-      points: ctx.params.points,
-      reason: `Abandoned at ${Math.round(item.watchProgress * 100)}% watched, idle for ${Math.floor(idle)} days`,
-    };
-  },
-};
-
 const bigAndUnloved: CleanupRule = {
   key: 'big-and-unloved',
   name: 'Big and unloved',
@@ -166,7 +147,6 @@ const staleGrowingSeries: CleanupRule = {
 export const ALL_RULES: CleanupRule[] = [
   neverWatched,
   watchedLongAgo,
-  abandonedWatch,
   bigAndUnloved,
   duplicateVersions,
   lowQualityObsolete,

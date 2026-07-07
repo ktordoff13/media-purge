@@ -25,7 +25,6 @@ function movie(overrides: Partial<MediaItem> = {}): MediaItem {
     addedAt: daysAgo(30),
     lastPlayedAt: daysAgo(10),
     playCount: 3,
-    watchProgress: 1,
     ratingCritic: 8,
     ratingAudience: 8.5,
     filePaths: ['/data/movies/test.mkv'],
@@ -60,7 +59,7 @@ function show(overrides: Partial<MediaItem> = {}): MediaItem {
 function ctxFor(rule: CleanupRule, params: Record<string, number> = {}): RuleContext {
   return {
     now: NOW,
-    capabilities: { perUserHistory: true, watchProgress: true, labels: true, multiVersion: true },
+    capabilities: { perUserHistory: true, labels: true, multiVersion: true },
     params: { ...rule.defaultParams, ...params },
   };
 }
@@ -81,7 +80,7 @@ describe('rule engine definitions', () => {
   describe('never-watched', () => {
     const r = rule('never-watched');
     it('matches an unplayed item older than the threshold', () => {
-      const m = movie({ playCount: 0, watchProgress: null, addedAt: daysAgo(400) });
+      const m = movie({ playCount: 0, addedAt: daysAgo(400) });
       expect(r.evaluate(m, ctxFor(r))?.points).toBe(40);
     });
     it('ignores unplayed items younger than the threshold', () => {
@@ -105,22 +104,6 @@ describe('rule engine definitions', () => {
     });
     it('ignores never-played items (that is never-watched territory)', () => {
       expect(r.evaluate(movie({ playCount: 0, lastPlayedAt: null }), ctxFor(r))).toBeNull();
-    });
-  });
-
-  describe('abandoned-watch', () => {
-    const r = rule('abandoned-watch');
-    it('matches a watch abandoned below the progress ceiling', () => {
-      const m = movie({ watchProgress: 0.25, playCount: 0, lastPlayedAt: daysAgo(200) });
-      expect(r.evaluate(m, ctxFor(r))?.reason).toContain('25%');
-    });
-    it('ignores items watched past the ceiling', () => {
-      const m = movie({ watchProgress: 0.9, lastPlayedAt: daysAgo(200) });
-      expect(r.evaluate(m, ctxFor(r))).toBeNull();
-    });
-    it('ignores recent abandonment', () => {
-      const m = movie({ watchProgress: 0.25, lastPlayedAt: daysAgo(30) });
-      expect(r.evaluate(m, ctxFor(r))).toBeNull();
     });
   });
 

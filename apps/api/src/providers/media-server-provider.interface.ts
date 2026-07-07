@@ -8,8 +8,6 @@ import { MediaSource } from '../database/entities/media-source.entity';
 export interface ProviderCapabilities {
   /** Play stats are aggregated across every server user, not just the owner. */
   perUserHistory: boolean;
-  /** Partial watch progress (0..1) is available. */
-  watchProgress: boolean;
   /** Items can carry user labels/tags usable as a keep-list. */
   labels: boolean;
   /** An item can have multiple file versions (duplicates detectable). */
@@ -38,7 +36,6 @@ export interface RemoteMediaItem {
   addedAt: Date | null;
   lastPlayedAt: Date | null;
   playCount: number;
-  watchProgress: number | null;
   ratingCritic: number | null;
   ratingAudience: number | null;
   filePaths: string[];

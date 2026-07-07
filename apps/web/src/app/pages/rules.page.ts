@@ -22,7 +22,6 @@ import { BytesPipe } from '../core/pipes';
 const PARAM_LABELS: Record<string, string> = {
   minAgeDays: 'Min. age (days)',
   minDaysSincePlay: 'Days since last play',
-  maxProgressPct: 'Max progress (%)',
   minIdleDays: 'Idle days',
   minSizeGb: 'Min size (GB)',
   maxPlays: 'Max plays',

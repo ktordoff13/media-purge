@@ -71,7 +71,6 @@ const ITEM_FIELDS = 'Path,MediaSources,DateCreated,ProviderIds,Tags,CriticRating
 interface PlayStats {
   playCount: number;
   lastPlayedAt: Date | null;
-  watchProgress: number | null;
   playedByAnyone: boolean;
 }
 
@@ -88,7 +87,6 @@ export class JellyfinProvider implements MediaServerProvider {
   readonly displayName = 'Jellyfin';
   readonly capabilities: ProviderCapabilities = {
     perUserHistory: true,
-    watchProgress: true,
     labels: true,
     multiVersion: true,
   };
@@ -185,7 +183,6 @@ export class JellyfinProvider implements MediaServerProvider {
         addedAt: isoToDate(item.DateCreated),
         lastPlayedAt: s.lastPlayedAt,
         playCount: s.playCount,
-        watchProgress: s.watchProgress,
         ratingCritic: item.CriticRating != null ? item.CriticRating / 10 : null,
         ratingAudience: item.CommunityRating ?? null,
         filePaths: filePaths.length ? filePaths : item.Path ? [item.Path] : [],
@@ -296,7 +293,6 @@ export class JellyfinProvider implements MediaServerProvider {
         addedAt: isoToDate(series.DateCreated),
         lastPlayedAt: s.lastPlayedAt,
         playCount: s.playCount,
-        watchProgress: episodeCount > 0 ? watchedEpisodeCount / episodeCount : null,
         ratingCritic: series.CriticRating != null ? series.CriticRating / 10 : null,
         ratingAudience: series.CommunityRating ?? null,
         filePaths: f?.filePaths ?? [],
@@ -327,14 +323,6 @@ export class JellyfinProvider implements MediaServerProvider {
     s.playCount += ud.PlayCount ?? 0;
     const last = isoToDate(ud.LastPlayedDate);
     if (last && (!s.lastPlayedAt || last > s.lastPlayedAt)) s.lastPlayedAt = last;
-    let progress: number | null = null;
-    if (ud.Played) progress = 1;
-    else if (ud.PlaybackPositionTicks && item.RunTimeTicks) {
-      progress = Math.min(1, ud.PlaybackPositionTicks / item.RunTimeTicks);
-    }
-    if (progress != null && (s.watchProgress == null || progress > s.watchProgress)) {
-      s.watchProgress = progress;
-    }
     s.playedByAnyone ||= !!ud.Played;
   }
 
@@ -361,7 +349,7 @@ export class JellyfinProvider implements MediaServerProvider {
 }
 
 function emptyStats(): PlayStats {
-  return { playCount: 0, lastPlayedAt: null, watchProgress: null, playedByAnyone: false };
+  return { playCount: 0, lastPlayedAt: null, playedByAnyone: false };
 }
 
 function isoToDate(iso: string | undefined): Date | null {

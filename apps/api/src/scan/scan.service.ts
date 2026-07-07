@@ -175,7 +175,6 @@ export class ScanService {
       addedAt: r.addedAt,
       lastPlayedAt: r.lastPlayedAt,
       playCount: r.playCount,
-      watchProgress: r.watchProgress,
       ratingCritic: r.ratingCritic,
       ratingAudience: r.ratingAudience,
       filePaths: r.filePaths,

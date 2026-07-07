@@ -64,10 +64,6 @@ export class MediaItem {
   @Column({ default: 0 })
   playCount: number;
 
-  /** Furthest watch progress 0..1, when the stats source supports it. */
-  @Column({ type: 'float', nullable: true })
-  watchProgress: number | null;
-
   @Column({ type: 'float', nullable: true })
   ratingCritic: number | null;
 

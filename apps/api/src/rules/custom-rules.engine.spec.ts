@@ -8,7 +8,6 @@ const GB = 1024 ** 3;
 
 const FULL_CAPS: ProviderCapabilities = {
   perUserHistory: true,
-  watchProgress: true,
   labels: true,
   multiVersion: true,
 };
@@ -22,7 +21,6 @@ function item(overrides: Partial<MediaItem> = {}): MediaItem {
     addedAt: new Date(NOW.getTime() - 400 * DAY),
     lastPlayedAt: null,
     playCount: 0,
-    watchProgress: null,
     ratingCritic: null,
     ratingAudience: 5.5,
     filePaths: [],
@@ -90,12 +88,12 @@ describe('evaluateCustomRule', () => {
       appliesTo: 'both' as const,
       match: 'all' as const,
       points: 10,
-      conditions: [{ field: 'watchProgressPct', operator: 'lt', value: 50 }],
+      conditions: [{ field: 'versionCount', operator: 'gt', value: 1 }],
     };
-    const plexLikeCaps = { ...FULL_CAPS, watchProgress: false };
-    const started = item({ watchProgress: 0.2 });
-    expect(evaluateCustomRule(rule, started, plexLikeCaps, NOW)).toBeNull();
-    expect(evaluateCustomRule(rule, started, FULL_CAPS, NOW)).not.toBeNull();
+    const limitedCaps = { ...FULL_CAPS, multiVersion: false };
+    const duped = item({ versionCount: 2 });
+    expect(evaluateCustomRule(rule, duped, limitedCaps, NOW)).toBeNull();
+    expect(evaluateCustomRule(rule, duped, FULL_CAPS, NOW)).not.toBeNull();
   });
 
   it('respects appliesTo media type', () => {

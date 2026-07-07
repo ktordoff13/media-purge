@@ -31,7 +31,7 @@ class RuleDto {
   @ApiProperty({ example: { minAgeDays: 365, points: 40 } })
   defaultParams: Record<string, number>;
 
-  @ApiProperty({ description: 'Provider capabilities this rule needs.', example: ['watchProgress'] })
+  @ApiProperty({ description: 'Provider capabilities this rule needs.', example: ['multiVersion'] })
   requires: string[];
 
   @ApiProperty()

@@ -33,7 +33,6 @@ export const CUSTOM_RULE_FIELDS: FieldDef[] = [
   { key: 'ageDays', label: 'Age (days)', type: 'number', appliesTo: 'both', description: 'Days since the item was added to the library', get: (i, now) => intOrNull(daysSince(i.addedAt, now)) },
   { key: 'idleDays', label: 'Idle (days)', type: 'number', appliesTo: 'both', description: 'Days since last play; falls back to days since added when never played', get: (i, now) => intOrNull(daysSince(i.lastPlayedAt, now) ?? daysSince(i.addedAt, now)) },
   { key: 'playCount', label: 'Play count', type: 'number', appliesTo: 'both', description: 'Total plays (all users where the server supports it)', get: (i) => i.playCount },
-  { key: 'watchProgressPct', label: 'Watch progress (%)', type: 'number', appliesTo: 'both', requires: 'watchProgress', description: 'Furthest watch progress, 0–100', get: (i) => (i.watchProgress == null ? null : Math.round(i.watchProgress * 100)) },
   { key: 'ratingAudience', label: 'Audience rating', type: 'number', appliesTo: 'both', description: '0–10; unknown never matches', get: (i) => i.ratingAudience },
   { key: 'ratingCritic', label: 'Critic rating', type: 'number', appliesTo: 'both', description: '0–10; unknown never matches', get: (i) => i.ratingCritic },
   { key: 'sizeGb', label: 'Size (GB)', type: 'number', appliesTo: 'both', description: 'Total size on disk in GB', get: (i) => round1(Number(i.sizeBytes) / GB) },

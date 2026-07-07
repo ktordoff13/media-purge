@@ -12,9 +12,9 @@ deleted, *when*, and *why*. (There is an optional, purely-for-fun **local** AI a
 ## Features
 
 - **Plex and Jellyfin, first-class.** Neutral provider layer — a `media_source` per server, scan
-  as many as you like. Jellyfin gets true cross-user watch aggregation out of the box; Plex
-  reports the token owner's stats (optional Tautulli enrichment is on the roadmap).
-- **9 tunable built-in rules + a custom rule builder** — compose your own conditions (field/operator/value, ALL/ANY, points) over the scan data with live preview, feeding the same scoring system — items are ranked by how strong the case is
+  as many as you like. Both aggregate play stats across **all** server users: Jellyfin via its
+  per-user API, Plex via the server-wide play history log (the same data Plex Dash shows).
+- **8 tunable built-in rules + a custom rule builder** — compose your own conditions (field/operator/value, ALL/ANY, points) over the scan data with live preview, feeding the same scoring system — items are ranked by how strong the case is
   and how much space they free. Rules that need data your server can't provide disable themselves.
 - **Safety first.** Ships with **dry-run ON**. Deletion is staged: approve → files move to a
   recycle bin → purged only after a retention window (default 30 days). Restore anytime before
@@ -65,14 +65,13 @@ Repo layout: `apps/api` (NestJS 11), `apps/web` (Angular 22), `docker/`, `docs/`
 ## The rules
 
 See [docs/rules.md](docs/rules.md) for the full reference. Summary: never watched & aging ·
-watched long ago · started-but-abandoned · big and unloved · duplicate versions · low quality
+watched long ago · big and unloved · duplicate versions · low quality
 unwatched · ended & fully watched series · poorly rated & never played · growing series nobody
 watches. Each has tunable thresholds and points; items past the score threshold become
 recommendations.
 
 ## Roadmap
 
-- Tautulli enrichment for Plex (true multi-user history) — optional, never required
 - Webhook/Discord notifications ("scan found 214 GB reclaimable")
 - Storage trend charts (scan snapshots are already stored)
 - Household keep/delete voting before purge

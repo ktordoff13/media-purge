@@ -61,7 +61,7 @@ export class ProviderTypeDto {
 
   @ApiProperty({
     description: 'What this provider can report; rules degrade gracefully around gaps.',
-    example: { perUserHistory: false, watchProgress: true, labels: true, multiVersion: true },
+    example: { perUserHistory: true, labels: true, multiVersion: true },
   })
   capabilities: Record<string, boolean>;
 }

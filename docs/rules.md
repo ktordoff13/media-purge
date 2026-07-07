@@ -12,7 +12,6 @@ label/tag on the media server, or were previously dismissed.
 | --- | --- | --- |
 | **Never watched, aging** | 0 plays and added > 365 days ago | 40 |
 | **Watched long ago** | played, but last play > 730 days ago | 25 |
-| **Started but abandoned** | < 50% watched, idle > 180 days *(needs watch-progress data)* | 20 |
 | **Big and unloved** | > 15 GB and ≤ 1 play | 20 |
 | **Duplicate versions** | more than one file version on the server | 30 |
 | **Low quality, unwatched** | SD/720p and untouched > 365 days | 15 |
@@ -27,15 +26,16 @@ episode in 2× the idle threshold is treated as ended.
 
 | | Plex | Jellyfin |
 | --- | --- | --- |
-| Play counts / last played | token owner's account only | **all users, aggregated** |
-| Watch progress | owner only | all users (max) |
+| Play counts / last played | **all users** (server play log) | **all users** (per-user API) |
 | Ended/continuing status | inferred (see †) | native |
 | Duplicate detection | ✓ | ✓ |
 | `keep` label exclusion | Plex labels | Jellyfin tags |
 
-Practical consequence: on a multi-user Plex server, "never watched" means "never watched by the
-token's account". Review before approving, or wait for the optional Tautulli enrichment on the
-roadmap. Jellyfin has no such caveat.
+Both providers aggregate play stats across every user of the server. Plex does it by rolling up
+the server-wide play history log (`/status/sessions/history/all` — the same data Plex Dash
+shows), so "never watched" means never watched by *anyone*. One caveat: that log only covers
+plays since the Plex server existed (or since history was last cleared); if the endpoint is
+unreachable the scan falls back to the token owner's stats and says so in the API log.
 
 ## Scoring intuition
 

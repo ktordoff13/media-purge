@@ -52,7 +52,6 @@ export interface MediaItem {
   addedAt: string | null;
   lastPlayedAt: string | null;
   playCount: number;
-  watchProgress: number | null;
   ratingCritic: number | null;
   ratingAudience: number | null;
   filePaths: string[];
