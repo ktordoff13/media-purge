@@ -32,6 +32,20 @@ export interface SecuritySettings {
   apiKey: string | null;
 }
 
+/**
+ * Optional local AI advisor (Ollama/LM Studio/llama.cpp — anything speaking
+ * the OpenAI-compatible chat API). Purely for fun "you might regret deleting
+ * this" notes on recommendations; never affects scoring or deletions and the
+ * app is fully functional with it disabled.
+ */
+export interface AiSettings {
+  enabled: boolean;
+  /** e.g. http://localhost:11434 (Ollama) — /v1 is appended automatically. */
+  baseUrl: string;
+  /** Model name as the server knows it, e.g. 'llama3.1' or 'qwen3'. */
+  model: string;
+}
+
 export const SETTINGS_DEFAULTS = {
   general: {
     dryRun: true,
@@ -44,6 +58,7 @@ export const SETTINGS_DEFAULTS = {
   sonarr: { enabled: false, baseUrl: '', apiKey: '' } as ArrSettings,
   maintenance: { appdataPaths: {} } as MaintenanceSettings,
   security: { apiKey: null } as SecuritySettings,
+  ai: { enabled: false, baseUrl: 'http://localhost:11434', model: 'llama3.1' } as AiSettings,
 };
 
 export type SettingsKey = keyof typeof SETTINGS_DEFAULTS;

@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import {
   ActivityEntry,
+  AiSettings,
   ArrSettings,
   ConnectionTestResult,
   CustomRule,
@@ -190,6 +191,20 @@ export class ApiService {
   }
   saveSecurity(s: SecuritySettings) {
     return this.http.put(`${BASE}/settings/security`, s);
+  }
+
+  // AI advisor
+  aiSettings(): Observable<AiSettings> {
+    return this.http.get<AiSettings>(`${BASE}/settings/ai`);
+  }
+  saveAiSettings(s: AiSettings) {
+    return this.http.put(`${BASE}/settings/ai`, s);
+  }
+  testAi(): Observable<ConnectionTestResult> {
+    return this.http.post<ConnectionTestResult>(`${BASE}/integrations/ai/test`, {});
+  }
+  aiAdvise() {
+    return this.http.post<{ started: boolean; message: string }>(`${BASE}/integrations/ai/advise`, {});
   }
 
   // Maintenance

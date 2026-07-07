@@ -48,5 +48,9 @@ Optional:
 - **Maintenance** — the Maintenance page can purge Plex's PhotoTranscoder cache and Jellyfin's
   `cache/` directory on disk (each needs its appdata mounted + Settings → Appdata paths) and
   trigger Plex/Jellyfin server-side housekeeping tasks, which need no mounts at all.
+- **Local AI regret check (fun, optional)** — run Ollama (or any OpenAI-compatible server) on
+  your LAN, enable it in Settings → Integrations with the server URL and model name, and new
+  scans get playful "you might regret deleting this" notes on recommendations. Or trigger it
+  manually with the "AI regret check" button. Display-only; never changes scores.
 - **API** — full OpenAPI docs at `http://<host>:8484/api/docs`. Set an API key under
   Settings → Security if the container is reachable beyond your LAN.

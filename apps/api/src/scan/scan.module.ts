@@ -7,6 +7,7 @@ import { Recommendation } from '../database/entities/recommendation.entity';
 import { ProtectedItem } from '../database/entities/protected-item.entity';
 import { ProvidersModule } from '../providers/providers.module';
 import { RulesModule } from '../rules/rules.module';
+import { AiModule } from '../ai/ai.module';
 import { ScanService } from './scan.service';
 import { ScanSchedulerService } from './scan-scheduler.service';
 import { ScanController, ItemsController } from './scan.controller';
@@ -16,6 +17,7 @@ import { ScanController, ItemsController } from './scan.controller';
     TypeOrmModule.forFeature([Scan, MediaItem, MediaSource, Recommendation, ProtectedItem]),
     ProvidersModule,
     RulesModule,
+    AiModule,
   ],
   providers: [ScanService, ScanSchedulerService],
   controllers: [ScanController, ItemsController],

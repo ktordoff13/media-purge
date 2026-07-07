@@ -58,6 +58,10 @@ export class Recommendation {
   @Column({ type: 'bigint', default: 0 })
   sizeBytes: number;
 
+  /** Playful local-AI "you might regret this" note. Display only. */
+  @Column({ type: 'varchar', nullable: true })
+  aiNote: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

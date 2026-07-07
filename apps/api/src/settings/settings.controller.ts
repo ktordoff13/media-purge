@@ -2,6 +2,7 @@ import { Body, Controller, Get, Put } from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import {
+  AiSettingsDto,
   ArrSettingsDto,
   GeneralSettingsDto,
   MaintenanceSettingsDto,
@@ -99,6 +100,22 @@ export class SettingsController {
   async putMaintenance(@Body() dto: MaintenanceSettingsDto) {
     await this.settings.set('maintenance', dto);
     await this.activity.log('settings.updated', 'Maintenance settings updated');
+    return dto;
+  }
+
+  @Get('ai')
+  @ApiOperation({ summary: 'Get local AI advisor settings' })
+  @ApiOkResponse({ type: AiSettingsDto })
+  getAi() {
+    return this.settings.get('ai');
+  }
+
+  @Put('ai')
+  @ApiOperation({ summary: 'Update local AI advisor settings' })
+  @ApiOkResponse({ type: AiSettingsDto })
+  async putAi(@Body() dto: AiSettingsDto) {
+    await this.settings.set('ai', dto);
+    await this.activity.log('settings.updated', 'AI advisor settings updated');
     return dto;
   }
 

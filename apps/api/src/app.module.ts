@@ -16,6 +16,7 @@ import { CleanupModule } from './cleanup/cleanup.module';
 import { RecommendationsModule } from './recommendations/recommendations.module';
 import { ArrModule } from './arr/arr.module';
 import { MaintenanceModule } from './maintenance/maintenance.module';
+import { AiModule } from './ai/ai.module';
 import { ApiKeyGuard } from './common/api-key.guard';
 
 export const CONFIG_DIR = process.env.CONFIG_DIR ?? join(process.cwd(), 'config');
@@ -47,6 +48,7 @@ const webDist = process.env.WEB_DIST ?? join(__dirname, '..', '..', 'web', 'dist
     RecommendationsModule,
     ArrModule,
     MaintenanceModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: ApiKeyGuard }],

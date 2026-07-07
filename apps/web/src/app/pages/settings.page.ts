@@ -11,6 +11,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../core/api.service';
 import {
+  AiSettings,
   ArrSettings,
   GeneralSettings,
   MaintenanceSettings,
@@ -206,6 +207,34 @@ interface EditableSource extends Partial<MediaSource> {
                 </div>
               }
             }
+            @if (ai(); as a) {
+              <div class="card">
+                <div class="row">
+                  <div class="arr-name">Local AI</div>
+                  <mat-slide-toggle [(ngModel)]="a.enabled">
+                    "You might regret this" notes on recommendations
+                  </mat-slide-toggle>
+                </div>
+                <p class="muted ai-hint">
+                  Just for fun: a local model (Ollama, LM Studio — anything OpenAI-compatible)
+                  reviews new recommendations and flags cult classics, award winners, and franchise
+                  pieces you might miss. Notes are display-only — they never change scores and
+                  nothing ever leaves your LAN.
+                </p>
+                <div class="row">
+                  <mat-form-field appearance="outline" class="grow">
+                    <mat-label>Server URL</mat-label>
+                    <input matInput [(ngModel)]="a.baseUrl" placeholder="http://192.168.1.10:11434" />
+                  </mat-form-field>
+                  <mat-form-field appearance="outline" class="grow">
+                    <mat-label>Model</mat-label>
+                    <input matInput [(ngModel)]="a.model" placeholder="llama3.1" />
+                  </mat-form-field>
+                  <button matButton (click)="testAiConn()"><mat-icon>network_check</mat-icon> Test</button>
+                  <button matButton="filled" (click)="saveAi()">Save</button>
+                </div>
+              </div>
+            }
           </div>
         </mat-tab>
 
@@ -289,6 +318,7 @@ interface EditableSource extends Partial<MediaSource> {
     .explain code { background: var(--mat-sys-surface-container-high); padding: 1px 6px; border-radius: 4px; }
     .arrow { color: var(--mat-sys-on-surface-variant); }
     .arr-name { font: var(--mat-sys-title-medium); width: 90px; }
+    .ai-hint { max-width: 720px; margin: 4px 0 8px; }
     .appdata-source { width: 220px; font: var(--mat-sys-body-large); }
     .section { font: var(--mat-sys-title-medium); margin: 16px 0 4px; }
     .protected-row { border-bottom: 1px solid var(--mat-sys-outline-variant); padding: 4px 0; }
@@ -307,6 +337,7 @@ export class SettingsPage implements OnInit {
   readonly sonarr = signal<ArrSettings | null>(null);
   readonly maintenanceSettings = signal<MaintenanceSettings | null>(null);
   readonly security = signal<SecuritySettings | null>(null);
+  readonly ai = signal<AiSettings | null>(null);
   readonly protectedItems = signal<ProtectedItem[]>([]);
 
   ngOnInit(): void {
@@ -318,6 +349,7 @@ export class SettingsPage implements OnInit {
     this.api.arr('sonarr').subscribe((a) => this.sonarr.set(a));
     this.api.maintenanceSettings().subscribe((ms) => this.maintenanceSettings.set(ms));
     this.api.security().subscribe((s) => this.security.set(s));
+    this.api.aiSettings().subscribe((a) => this.ai.set(a));
     this.api.protectedItems().subscribe((items) => this.protectedItems.set(items));
   }
 
@@ -430,6 +462,20 @@ export class SettingsPage implements OnInit {
     if (!ms) return;
     this.api.saveMaintenanceSettings(ms).subscribe(() =>
       this.snack.open('Appdata paths saved', 'OK', { duration: 3000 }),
+    );
+  }
+
+  // AI advisor
+  saveAi(): void {
+    const a = this.ai();
+    if (!a) return;
+    this.api.saveAiSettings(a).subscribe(() =>
+      this.snack.open('AI advisor settings saved', 'OK', { duration: 3000 }),
+    );
+  }
+  testAiConn(): void {
+    this.api.testAi().subscribe((res) =>
+      this.snack.open(res.ok ? `✓ ${res.message}` : `✗ ${res.message}`, 'OK', { duration: 7000 }),
     );
   }
 

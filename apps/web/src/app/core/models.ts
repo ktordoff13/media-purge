@@ -80,6 +80,7 @@ export interface Recommendation {
   totalScore: number;
   reasons: RecommendationReason[];
   sizeBytes: number;
+  aiNote: string | null;
   mediaItem: MediaItem;
 }
 
@@ -145,6 +146,12 @@ export interface MaintenanceSettings {
 
 export interface SecuritySettings {
   apiKey: string | null;
+}
+
+export interface AiSettings {
+  enabled: boolean;
+  baseUrl: string;
+  model: string;
 }
 
 export interface MaintenanceOperation {

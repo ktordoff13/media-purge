@@ -5,8 +5,9 @@ recommendations for what to delete (never watched, watched years ago, duplicates
 dead series…), and reclaim storage through a staged, reversible pipeline — built to run as an
 unraid Community Applications container.
 
-No AI. Every recommendation is produced by plain heuristics you can read, tune, or disable, and
-every action is written to a permanent activity log: *what* was deleted, *when*, and *why*.
+Deletion decisions are never made by AI. Every recommendation is produced by plain heuristics you
+can read, tune, or disable, and every action is written to a permanent activity log: *what* was
+deleted, *when*, and *why*. (There is an optional, purely-for-fun **local** AI advisor — see below.)
 
 ## Features
 
@@ -23,6 +24,10 @@ every action is written to a permanent activity log: *what* was deleted, *when*,
 - **Server maintenance (ImageMaid-style).** Purge Plex's PhotoTranscoder cache (commonly
   50–100+ GB), trigger Clean Bundles / Optimize Database / Empty Trash, and run Jellyfin's
   cache/transcode/DB-optimize tasks — from the Maintenance page.
+- **Optional local AI "regret check" (just for fun).** Point it at any OpenAI-compatible local
+  server (Ollama, LM Studio) and it flags recommendations you might regret deleting — cult
+  classics, award winners, franchise pieces — as playful display-only notes. Zero effect on
+  scoring or deletions, nothing ever leaves your LAN, and the app is fully functional without it.
 - **Nice UI, documented API.** Angular 22 + Material dark UI; NestJS 11 API with full
   OpenAPI/Swagger docs at `/api/docs`. SQLite keeps everything in one file in `/config`.
 

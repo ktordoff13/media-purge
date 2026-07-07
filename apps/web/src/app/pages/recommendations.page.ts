@@ -69,6 +69,11 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
         <div class="total muted">
           {{ recs().length }} items · {{ totalBytes() | bytes }} total
         </div>
+        @if (status === 'open') {
+          <button matButton (click)="askAi()" matTooltip="Ask your local AI to flag items you might regret deleting — just for fun, never changes scores">
+            <mat-icon>psychology</mat-icon> AI regret check
+          </button>
+        }
       </div>
 
       @if (selected().size && status === 'open') {
@@ -126,6 +131,11 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
                   last played {{ rec.mediaItem.lastPlayedAt | timeAgo }} ·
                   added {{ rec.mediaItem.addedAt | timeAgo }}
                 </div>
+                @if (rec.aiNote) {
+                  <div class="ai-note" matTooltip="A local AI's opinion — display only, never affects scoring">
+                    <mat-icon inline>psychology</mat-icon> {{ rec.aiNote }}
+                  </div>
+                }
                 <mat-chip-set class="reason-chips">
                   @for (reason of rec.reasons; track reason.ruleKey) {
                     <mat-chip [matTooltip]="reason.reason" disableRipple>
@@ -207,6 +217,8 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
       padding: 1px 8px; border-radius: 999px; color: var(--mat-sys-on-surface-variant); text-transform: uppercase; }
     .rec-meta { font: var(--mat-sys-body-small); margin: 2px 0 6px; }
     .reason-chips { --mdc-chip-container-height: 24px; }
+    .ai-note { display: flex; align-items: center; gap: 6px; font: var(--mat-sys-body-small);
+      font-style: italic; color: var(--mat-sys-tertiary); margin: 2px 0 6px; }
     .rec-side { text-align: right; flex: none; }
     .rec-size { font: var(--mat-sys-title-medium); font-variant-numeric: tabular-nums; }
     .rec-score { font: var(--mat-sys-body-small); }
@@ -302,6 +314,31 @@ export class RecommendationsPage implements OnInit {
       this.snack.open(`${results.length - failed.length} ${action}d${note}`, 'OK', { duration: 6000 });
       this.load();
     });
+  }
+
+  askAi(): void {
+    this.api.aiAdvise().subscribe({
+      next: (res) => {
+        this.snack.open(res.message, 'OK', { duration: 6000 });
+        if (res.started) this.pollForNotes();
+      },
+      error: (err) => this.snack.open(err?.error?.message ?? 'AI advisor unavailable', 'OK', { duration: 7000 }),
+    });
+  }
+
+  /** Reload periodically while the background advisory pass fills in notes. */
+  private pollForNotes(attempt = 0): void {
+    if (attempt >= 20) return;
+    setTimeout(() => {
+      const before = this.recs().filter((r) => r.aiNote).length;
+      this.api
+        .recommendations({ status: this.status, sort: this.sort, library: this.library || undefined })
+        .subscribe((recs) => {
+          this.recs.set(recs);
+          const after = recs.filter((r) => r.aiNote).length;
+          if (after === before) this.pollForNotes(attempt + 1);
+        });
+    }, 6000);
   }
 
   hidePoster(event: Event): void {

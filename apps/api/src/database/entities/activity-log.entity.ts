@@ -13,6 +13,7 @@ export type ActivityType =
   | 'bin.restored'
   | 'bin.purged'
   | 'arr.deleted'
+  | 'ai.advised'
   | 'maintenance.cache-purged'
   | 'maintenance.task-run'
   | 'settings.updated';

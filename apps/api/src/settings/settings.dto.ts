@@ -95,6 +95,26 @@ export class MaintenanceSettingsDto {
   appdataPaths: Record<string, string>;
 }
 
+export class AiSettingsDto {
+  @ApiProperty({
+    description:
+      'Enable the local AI advisor. Purely-for-fun regret notes on recommendations; never affects scores or deletions.',
+  })
+  @IsBoolean()
+  enabled: boolean;
+
+  @ApiProperty({
+    description: 'OpenAI-compatible server, e.g. Ollama. /v1 is appended automatically.',
+    example: 'http://localhost:11434',
+  })
+  @IsString()
+  baseUrl: string;
+
+  @ApiProperty({ description: 'Model name as the server knows it.', example: 'llama3.1' })
+  @IsString()
+  model: string;
+}
+
 export class SecuritySettingsDto {
   @ApiPropertyOptional({
     description: 'When set, every API request must carry this value in the X-Api-Key header.',

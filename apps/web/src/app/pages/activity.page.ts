@@ -23,6 +23,7 @@ const TYPE_ICONS: Record<string, string> = {
   'bin.restored': 'restore',
   'bin.purged': 'delete_forever',
   'arr.deleted': 'link',
+  'ai.advised': 'psychology',
   'maintenance.cache-purged': 'cleaning_services',
   'maintenance.task-run': 'build',
   'settings.updated': 'settings',

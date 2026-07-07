@@ -10,6 +10,7 @@ import { ProviderRegistry } from '../providers/provider-registry.service';
 import { RemoteMediaItem } from '../providers/media-server-provider.interface';
 import { RulesService, KEEP_LABEL, MIN_RECOMMENDATION_SCORE } from '../rules/rules.service';
 import { ActivityService } from '../activity/activity.service';
+import { AiAdvisorService } from '../ai/ai-advisor.service';
 import { gb } from '../rules/rule.interface';
 
 @Injectable()
@@ -26,6 +27,7 @@ export class ScanService {
     private readonly registry: ProviderRegistry,
     private readonly rules: RulesService,
     private readonly activity: ActivityService,
+    private readonly aiAdvisor: AiAdvisorService,
   ) {}
 
   get isRunning(): boolean {
@@ -89,6 +91,7 @@ export class ScanService {
       reclaimableBytes: bytes,
       finishedAt: new Date(),
     });
+    await this.aiAdvisor.adviseAfterScan(scan.id);
     await this.activity.log(
       'scan.completed',
       `Scan #${scan.id} finished: ${itemCount} items, ${count} recommendations, ${gb(bytes)} reclaimable`,
