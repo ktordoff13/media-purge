@@ -449,9 +449,12 @@ export class SettingsPage implements OnInit {
   }
   saveMappings(): void {
     const clean = this.mappings().filter((m) => m.from && m.to);
-    this.api.savePathMappings(clean).subscribe(() => {
-      this.mappings.set(clean);
-      this.snack.open('Path mappings saved', 'OK', { duration: 3000 });
+    this.api.savePathMappings(clean).subscribe({
+      next: () => {
+        this.mappings.set(clean);
+        this.snack.open('Path mappings saved', 'OK', { duration: 3000 });
+      },
+      error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
     });
   }
 
@@ -462,9 +465,10 @@ export class SettingsPage implements OnInit {
   saveArr(kind: string): void {
     const a = this.arrOf(kind);
     if (!a) return;
-    this.api.saveArr(kind as 'radarr' | 'sonarr', a).subscribe(() =>
-      this.snack.open(`${kind} settings saved`, 'OK', { duration: 3000 }),
-    );
+    this.api.saveArr(kind as 'radarr' | 'sonarr', a).subscribe({
+      next: () => this.snack.open(`${kind} settings saved`, 'OK', { duration: 3000 }),
+      error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
+    });
   }
   testArr(kind: string): void {
     this.api.testArr(kind as 'radarr' | 'sonarr').subscribe((res) =>
@@ -476,18 +480,20 @@ export class SettingsPage implements OnInit {
   saveMaintenance(): void {
     const ms = this.maintenanceSettings();
     if (!ms) return;
-    this.api.saveMaintenanceSettings(ms).subscribe(() =>
-      this.snack.open('Appdata paths saved', 'OK', { duration: 3000 }),
-    );
+    this.api.saveMaintenanceSettings(ms).subscribe({
+      next: () => this.snack.open('Appdata paths saved', 'OK', { duration: 3000 }),
+      error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
+    });
   }
 
   // AI advisor
   saveAi(): void {
     const a = this.ai();
     if (!a) return;
-    this.api.saveAiSettings(a).subscribe(() =>
-      this.snack.open('AI advisor settings saved', 'OK', { duration: 3000 }),
-    );
+    this.api.saveAiSettings(a).subscribe({
+      next: () => this.snack.open('AI advisor settings saved', 'OK', { duration: 3000 }),
+      error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
+    });
   }
   testAiConn(): void {
     this.api.testAi().subscribe((res) =>
@@ -499,9 +505,10 @@ export class SettingsPage implements OnInit {
   saveSecurity(): void {
     const sec = this.security();
     if (!sec) return;
-    this.api.saveSecurity(sec).subscribe(() =>
-      this.snack.open('Security settings saved', 'OK', { duration: 3000 }),
-    );
+    this.api.saveSecurity(sec).subscribe({
+      next: () => this.snack.open('Security settings saved', 'OK', { duration: 3000 }),
+      error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
+    });
   }
 
   unprotect(item: ProtectedItem): void {
