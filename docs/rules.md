@@ -43,3 +43,24 @@ Points ≈ how confident the rule is on its own. One strong signal ("never watch
 40) is enough to recommend; weak signals ("SD quality", 15) only surface when they stack with
 others. Raise a rule's points to make it more decisive, lower the thresholds to make it more
 aggressive.
+
+## Custom rules (condition builder)
+
+Beyond the built-ins, the Rules page lets you compose your own rules: pick fields, operators,
+and values, combine them with ALL/ANY, and assign points — they feed the same scoring pipeline
+and produce the same explainable reasons ("Play count: 0 = 0; Age (days): 212 > 180").
+
+Available fields include everything in the snapshot plus derived values: age/idle days,
+size in GB, **GB per play**, watch progress %, watched episodes %, days since a new episode,
+resolution, ratings, library, labels, version count, series status.
+
+Semantics to know:
+
+- **Unknown never matches** — `Audience rating < 6` cannot catch an unrated item.
+- **Capability-gated** — a rule using watch progress silently skips items from servers that
+  don't report it (Plex without Tautulli), instead of guessing.
+- **Preview before you trust it** — the editor's Preview button evaluates the rule against your
+  latest scan and shows exactly what it would match and how much space that is.
+
+Custom rules never override the safety valves: protected items, the `keep` label, and previous
+dismissals always win.

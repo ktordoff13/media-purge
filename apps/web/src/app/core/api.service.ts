@@ -5,6 +5,9 @@ import {
   ActivityEntry,
   ArrSettings,
   ConnectionTestResult,
+  CustomRule,
+  CustomRuleFieldsResponse,
+  CustomRulePreview,
   Dashboard,
   GeneralSettings,
   MaintenanceOperation,
@@ -23,6 +26,11 @@ import {
 } from './models';
 
 const BASE = '/api/v1';
+
+function stripId<T extends { id?: number }>(obj: T): Omit<T, 'id'> {
+  const { id: _id, ...rest } = obj;
+  return rest;
+}
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -76,6 +84,25 @@ export class ApiService {
   }
   updateRule(key: string, patch: { enabled?: boolean; params?: Record<string, number> }) {
     return this.http.put(`${BASE}/rules/${key}`, patch);
+  }
+
+  // Custom rules
+  customRuleFields(): Observable<CustomRuleFieldsResponse> {
+    return this.http.get<CustomRuleFieldsResponse>(`${BASE}/custom-rules/fields`);
+  }
+  customRules(): Observable<CustomRule[]> {
+    return this.http.get<CustomRule[]>(`${BASE}/custom-rules`);
+  }
+  saveCustomRule(rule: CustomRule): Observable<CustomRule> {
+    return rule.id
+      ? this.http.put<CustomRule>(`${BASE}/custom-rules/${rule.id}`, stripId(rule))
+      : this.http.post<CustomRule>(`${BASE}/custom-rules`, stripId(rule));
+  }
+  deleteCustomRule(id: number) {
+    return this.http.delete(`${BASE}/custom-rules/${id}`);
+  }
+  previewCustomRule(rule: CustomRule): Observable<CustomRulePreview> {
+    return this.http.post<CustomRulePreview>(`${BASE}/custom-rules/preview`, stripId(rule));
   }
 
   // Recycle bin

@@ -169,3 +169,44 @@ export interface Dashboard {
   spaceSavedBytes: number;
   libraries: LibraryStat[];
 }
+
+// ── Custom rules (structured condition builder) ──────────────────────────────
+
+export interface CustomRuleCondition {
+  field: string;
+  operator: string;
+  value: number | string;
+}
+
+export interface CustomRule {
+  id?: number;
+  name: string;
+  description?: string;
+  appliesTo: 'movie' | 'show' | 'both';
+  match: 'all' | 'any';
+  conditions: CustomRuleCondition[];
+  points: number;
+  enabled: boolean;
+}
+
+export interface CustomRuleField {
+  key: string;
+  label: string;
+  type: 'number' | 'string' | 'enum' | 'labels';
+  appliesTo: 'movie' | 'show' | 'both';
+  requires?: string;
+  enumValues?: string[];
+  description: string;
+}
+
+export interface CustomRuleFieldsResponse {
+  fields: CustomRuleField[];
+  operators: Record<string, { key: string; label: string }[]>;
+}
+
+export interface CustomRulePreview {
+  matchCount: number;
+  totalSizeBytes: number;
+  itemCount: number;
+  sample: { title: string; year: number | null; libraryName: string; sizeBytes: number; reason: string }[];
+}

@@ -13,7 +13,7 @@ every action is written to a permanent activity log: *what* was deleted, *when*,
 - **Plex and Jellyfin, first-class.** Neutral provider layer — a `media_source` per server, scan
   as many as you like. Jellyfin gets true cross-user watch aggregation out of the box; Plex
   reports the token owner's stats (optional Tautulli enrichment is on the roadmap).
-- **9 tunable cleanup rules** with a scoring system — items are ranked by how strong the case is
+- **9 tunable built-in rules + a custom rule builder** — compose your own conditions (field/operator/value, ALL/ANY, points) over the scan data with live preview, feeding the same scoring system — items are ranked by how strong the case is
   and how much space they free. Rules that need data your server can't provide disable themselves.
 - **Safety first.** Ships with **dry-run ON**. Deletion is staged: approve → files move to a
   recycle bin → purged only after a retention window (default 30 days). Restore anytime before

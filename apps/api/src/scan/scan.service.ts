@@ -98,6 +98,7 @@ export class ScanService {
 
   private async generateRecommendations(scan: Scan): Promise<{ count: number; bytes: number }> {
     const configs = new Map((await this.rules.getConfigs()).map((c) => [c.key, c]));
+    const customRules = await this.rules.getEnabledCustomRules();
     const protectedSet = new Set(
       (await this.protectedItems.find()).map((p) => `${p.sourceId}:${p.providerItemId}`),
     );
@@ -130,7 +131,7 @@ export class ScanService {
       if (item.labels.some((l) => l.toLowerCase() === KEEP_LABEL)) continue;
       const caps = capsBySource.get(item.sourceId);
       if (!caps) continue;
-      const reasons = this.rules.evaluateItem(item, caps, configs, now);
+      const reasons = this.rules.evaluateItem(item, caps, configs, customRules, now);
       const totalScore = reasons.reduce((sum, r) => sum + r.points, 0);
       if (totalScore < MIN_RECOMMENDATION_SCORE) continue;
       toSave.push(

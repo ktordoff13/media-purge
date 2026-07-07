@@ -2,10 +2,12 @@ import { Injectable, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { RuleConfig } from '../database/entities/rule-config.entity';
+import { CustomRule } from '../database/entities/custom-rule.entity';
 import { MediaItem } from '../database/entities/media-item.entity';
 import { RecommendationReason } from '../database/entities/recommendation.entity';
 import { ProviderCapabilities } from '../providers/media-server-provider.interface';
 import { ALL_RULES } from './definitions';
+import { evaluateCustomRule } from './custom-rules.engine';
 import { CleanupRule } from './rule.interface';
 
 /** Minimum aggregate score before an item becomes a recommendation. */
@@ -21,7 +23,13 @@ export class RulesService implements OnModuleInit {
   constructor(
     @InjectRepository(RuleConfig)
     private readonly configs: Repository<RuleConfig>,
+    @InjectRepository(CustomRule)
+    private readonly customRules: Repository<CustomRule>,
   ) {}
+
+  async getEnabledCustomRules(): Promise<CustomRule[]> {
+    return this.customRules.findBy({ enabled: true });
+  }
 
   /** Seed config rows for any rules that don't have one yet. */
   async onModuleInit(): Promise<void> {
@@ -58,6 +66,7 @@ export class RulesService implements OnModuleInit {
     item: MediaItem,
     capabilities: ProviderCapabilities,
     configs: Map<string, RuleConfig>,
+    customRules: CustomRule[] = [],
     now = new Date(),
   ): RecommendationReason[] {
     const reasons: RecommendationReason[] = [];
@@ -69,6 +78,17 @@ export class RulesService implements OnModuleInit {
       const match = rule.evaluate(item, { now, capabilities, params });
       if (match) {
         reasons.push({ ruleKey: rule.key, ruleName: rule.name, points: match.points, reason: match.reason });
+      }
+    }
+    for (const custom of customRules) {
+      const match = evaluateCustomRule(custom, item, capabilities, now);
+      if (match) {
+        reasons.push({
+          ruleKey: `custom-${custom.id}`,
+          ruleName: custom.name,
+          points: match.points,
+          reason: match.reason,
+        });
       }
     }
     return reasons;
