@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -32,6 +32,7 @@ export class GeneralSettingsDto {
     example: 30,
     minimum: 1,
   })
+  @Type(() => Number)
   @IsInt()
   @Min(1)
   retentionDays: number;
@@ -42,6 +43,7 @@ export class GeneralSettingsDto {
     nullable: true,
     type: String,
   })
+  @Transform(({ value }) => (value === '' ? null : (value as string | null)))
   @IsOptional()
   @IsString()
   scanCron: string | null;

@@ -423,9 +423,20 @@ export class SettingsPage implements OnInit {
   saveGeneral(): void {
     const g = this.general();
     if (!g) return;
-    this.api.saveGeneral(g).subscribe(() => {
-      this.snack.open('General settings saved', 'OK', { duration: 3000 });
-      this.dryRunState.refresh();
+    // Number inputs can hand back null/strings; never let that block a save.
+    g.retentionDays = Math.max(1, Math.round(Number(g.retentionDays)) || 30);
+    this.api.saveGeneral(g).subscribe({
+      next: () => {
+        this.general.set({ ...g });
+        this.snack.open('General settings saved', 'OK', { duration: 3000 });
+        this.dryRunState.refresh();
+      },
+      error: (err) => {
+        this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 });
+        // Resync from the server so the UI never shows unsaved state as saved.
+        this.api.general().subscribe((fresh) => this.general.set(fresh));
+        this.dryRunState.refresh();
+      },
     });
   }
 
