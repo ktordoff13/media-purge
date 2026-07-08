@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>media-purge</Name>
-  <Repository>ktordoff13/media-purge:latest</Repository>
-  <Registry>https://hub.docker.com/r/ktordoff13/media-purge</Registry>
+  <Repository>ghcr.io/ktordoff13/media-purge:latest</Repository>
+  <Registry>https://github.com/ktordoff13/media-purge/pkgs/container/media-purge</Registry>
   <Network>bridge</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>

@@ -1,0 +1,12 @@
+# Keep the build context lean — the Dockerfile installs and builds from source.
+.git
+.github
+node_modules
+apps/*/node_modules
+apps/*/dist
+apps/web/.angular
+docs
+docker
+*.md
+.dockerignore
+.claude

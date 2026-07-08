@@ -33,6 +33,19 @@ deleted, *when*, and *why*. (There is an optional, purely-for-fun **local** AI a
 
 ## Quick start (Docker)
 
+Prebuilt images are published to GHCR on every push to `main`:
+
+```bash
+docker run -d --name media-purge \
+  -p 8484:8484 \
+  -v /mnt/user/appdata/media-purge:/config \
+  -v /mnt/user/media:/media \
+  -v /mnt/user/media/.media-purge-bin:/recycle-bin \
+  ghcr.io/ktordoff13/media-purge:latest
+```
+
+Or build locally:
+
 ```bash
 docker build -f docker/Dockerfile -t media-purge .
 docker run -d --name media-purge \
