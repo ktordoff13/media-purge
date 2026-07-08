@@ -9,7 +9,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiProperty, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ArrayNotEmpty, IsArray, IsIn } from 'class-validator';
@@ -35,8 +35,10 @@ class BulkActionDto {
 @Controller('recommendations')
 export class RecommendationsController {
   constructor(
-    @InjectRepository(Recommendation) private readonly recs: Repository<Recommendation>,
-    @InjectRepository(ProtectedItem) private readonly protectedItems: Repository<ProtectedItem>,
+    @InjectRepository(Recommendation)
+    private readonly recs: Repository<Recommendation>,
+    @InjectRepository(ProtectedItem)
+    private readonly protectedItems: Repository<ProtectedItem>,
     @InjectRepository(MediaItem) private readonly items: Repository<MediaItem>,
     private readonly cleanup: CleanupService,
     private readonly activity: ActivityService,
@@ -48,10 +50,28 @@ export class RecommendationsController {
     description:
       'Each recommendation carries the media item snapshot it was computed from plus the matched rules ("reasons"). Sort by score to see the strongest candidates or by size to see the biggest wins.',
   })
-  @ApiQuery({ name: 'status', required: false, enum: ['open', 'approved', 'dismissed', 'restored', 'purged'] })
-  @ApiQuery({ name: 'scanId', required: false, type: Number, description: 'Defaults to the latest scan.' })
-  @ApiQuery({ name: 'sort', required: false, enum: ['score', 'size'], description: 'Descending. Default: score.' })
-  @ApiQuery({ name: 'library', required: false, description: 'Filter by library name.' })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    enum: ['open', 'approved', 'dismissed', 'restored', 'purged'],
+  })
+  @ApiQuery({
+    name: 'scanId',
+    required: false,
+    type: Number,
+    description: 'Defaults to the latest scan.',
+  })
+  @ApiQuery({
+    name: 'sort',
+    required: false,
+    enum: ['score', 'size'],
+    description: 'Descending. Default: score.',
+  })
+  @ApiQuery({
+    name: 'library',
+    required: false,
+    description: 'Filter by library name.',
+  })
   async list(
     @Query('status') status: RecommendationStatus = 'open',
     @Query('scanId') scanId?: string,
@@ -72,7 +92,10 @@ export class RecommendationsController {
       .where('r.scanId = :scanId', { scanId: effectiveScanId })
       .andWhere('r.status = :status', { status });
     if (library) qb.andWhere('item.libraryName = :library', { library });
-    qb.orderBy(sort === 'size' ? 'r.sizeBytes' : 'r.totalScore', 'DESC').addOrderBy('r.sizeBytes', 'DESC');
+    qb.orderBy(
+      sort === 'size' ? 'r.sizeBytes' : 'r.totalScore',
+      'DESC',
+    ).addOrderBy('r.sizeBytes', 'DESC');
     return qb.getMany();
   }
 
@@ -89,7 +112,8 @@ export class RecommendationsController {
   @Post(':id/dismiss')
   @ApiOperation({
     summary: 'Dismiss a recommendation',
-    description: 'Rejects the suggestion. Future scans will not re-suggest this item.',
+    description:
+      'Rejects the suggestion. Future scans will not re-suggest this item.',
   })
   async dismiss(@Param('id', ParseIntPipe) id: number) {
     await this.cleanup.dismiss(id);
@@ -119,7 +143,10 @@ export class RecommendationsController {
       'Adds the item to the protected list ("never suggest deleting this") and dismisses the current recommendation.',
   })
   async protect(@Param('id', ParseIntPipe) id: number) {
-    const rec = await this.recs.findOne({ where: { id }, relations: { mediaItem: true } });
+    const rec = await this.recs.findOne({
+      where: { id },
+      relations: { mediaItem: true },
+    });
     if (!rec) throw new NotFoundException(`Recommendation ${id} not found`);
     const item = rec.mediaItem;
     const exists = await this.protectedItems.findOneBy({
@@ -136,9 +163,15 @@ export class RecommendationsController {
       );
     }
     if (rec.status === 'open') {
-      await this.recs.update(rec.id, { status: 'dismissed', resolvedAt: new Date() });
+      await this.recs.update(rec.id, {
+        status: 'dismissed',
+        resolvedAt: new Date(),
+      });
     }
-    await this.activity.log('item.protected', `Protected "${item.title}" — it will never be suggested again`);
+    await this.activity.log(
+      'item.protected',
+      `Protected "${item.title}" — it will never be suggested again`,
+    );
     return { protected: true };
   }
 }
@@ -147,12 +180,15 @@ export class RecommendationsController {
 @Controller('protected-items')
 export class ProtectedItemsController {
   constructor(
-    @InjectRepository(ProtectedItem) private readonly protectedItems: Repository<ProtectedItem>,
+    @InjectRepository(ProtectedItem)
+    private readonly protectedItems: Repository<ProtectedItem>,
     private readonly activity: ActivityService,
   ) {}
 
   @Get()
-  @ApiOperation({ summary: 'List protected items (never suggested for deletion)' })
+  @ApiOperation({
+    summary: 'List protected items (never suggested for deletion)',
+  })
   list() {
     return this.protectedItems.find({ order: { id: 'DESC' } });
   }
@@ -163,7 +199,10 @@ export class ProtectedItemsController {
     const item = await this.protectedItems.findOneBy({ id });
     if (item) {
       await this.protectedItems.delete(id);
-      await this.activity.log('item.unprotected', `Removed protection from "${item.title}"`);
+      await this.activity.log(
+        'item.unprotected',
+        `Removed protection from "${item.title}"`,
+      );
     }
     return { deleted: true };
   }

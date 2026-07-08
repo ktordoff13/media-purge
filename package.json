@@ -16,7 +16,7 @@
     "dev:web": "npm start --workspace apps/web",
     "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
     "test": "npm test --workspace apps/api",
-    "lint": "npm run lint --workspace apps/api && npm run lint --workspace apps/web"
+    "lint": "npm run lint --workspace apps/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

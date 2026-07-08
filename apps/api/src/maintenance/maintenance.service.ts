@@ -1,7 +1,12 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { promises as fs } from 'fs';
+import { promises as fs, type Stats } from 'fs';
 import * as path from 'path';
 import { MediaSource } from '../database/entities/media-source.entity';
 import { SettingsService } from '../settings/settings.service';
@@ -39,15 +44,20 @@ export class MaintenanceService {
   private readonly logger = new Logger(MaintenanceService.name);
 
   constructor(
-    @InjectRepository(MediaSource) private readonly sources: Repository<MediaSource>,
+    @InjectRepository(MediaSource)
+    private readonly sources: Repository<MediaSource>,
     private readonly settings: SettingsService,
     private readonly activity: ActivityService,
   ) {}
 
   async operations(sourceId: number): Promise<MaintenanceOperation[]> {
     const source = await this.mustFind(sourceId);
-    const appdata = (await this.settings.get('maintenance')).appdataPaths[String(sourceId)];
-    const needsAppdata = (op: Omit<MaintenanceOperation, 'available' | 'unavailableReason'>) => ({
+    const appdata = (await this.settings.get('maintenance')).appdataPaths[
+      String(sourceId)
+    ];
+    const needsAppdata = (
+      op: Omit<MaintenanceOperation, 'available' | 'unavailableReason'>,
+    ) => ({
       ...op,
       available: !!appdata,
       unavailableReason: appdata
@@ -64,9 +74,28 @@ export class MaintenanceService {
             'Deletes Cache/PhotoTranscoder — regenerated thumbnails/posters that routinely bloat to tens or hundreds of GB. Plex rebuilds what it needs.',
           filesystem: true,
         }),
-        { key: 'clean-bundles', name: 'Clean bundles', description: 'Asks Plex to delete orphaned metadata bundles (posters, art, extras of removed items).', filesystem: false, available: true },
-        { key: 'optimize-db', name: 'Optimize database', description: 'Runs Plex’s built-in database optimization/vacuum.', filesystem: false, available: true },
-        { key: 'empty-trash', name: 'Empty trash', description: 'Empties the trash in every library section.', filesystem: false, available: true },
+        {
+          key: 'clean-bundles',
+          name: 'Clean bundles',
+          description:
+            'Asks Plex to delete orphaned metadata bundles (posters, art, extras of removed items).',
+          filesystem: false,
+          available: true,
+        },
+        {
+          key: 'optimize-db',
+          name: 'Optimize database',
+          description: 'Runs Plex’s built-in database optimization/vacuum.',
+          filesystem: false,
+          available: true,
+        },
+        {
+          key: 'empty-trash',
+          name: 'Empty trash',
+          description: 'Empties the trash in every library section.',
+          filesystem: false,
+          available: true,
+        },
       ];
     }
     return [
@@ -77,17 +106,42 @@ export class MaintenanceService {
           'Deletes the contents of the cache/ folder in Jellyfin’s config dir directly on disk — regenerable images and transcode leftovers. Reports exactly how much space it frees; use this over the API task when you want dry-run size estimates.',
         filesystem: true,
       }),
-      { key: 'clean-cache', name: 'Clean cache (server task)', description: 'Runs Jellyfin’s "Clean Cache Directory" task (transcoded images, temp metadata).', filesystem: false, available: true },
-      { key: 'clean-transcodes', name: 'Clean transcode directory', description: 'Runs Jellyfin’s "Clean Transcode Directory" task.', filesystem: false, available: true },
-      { key: 'optimize-db', name: 'Optimize database', description: 'Runs Jellyfin’s database optimization/vacuum task.', filesystem: false, available: true },
+      {
+        key: 'clean-cache',
+        name: 'Clean cache (server task)',
+        description:
+          'Runs Jellyfin’s "Clean Cache Directory" task (transcoded images, temp metadata).',
+        filesystem: false,
+        available: true,
+      },
+      {
+        key: 'clean-transcodes',
+        name: 'Clean transcode directory',
+        description: 'Runs Jellyfin’s "Clean Transcode Directory" task.',
+        filesystem: false,
+        available: true,
+      },
+      {
+        key: 'optimize-db',
+        name: 'Optimize database',
+        description: 'Runs Jellyfin’s database optimization/vacuum task.',
+        filesystem: false,
+        available: true,
+      },
     ];
   }
 
-  async run(sourceId: number, operation: string): Promise<{ message: string; bytesFreed: number; dryRun: boolean }> {
+  async run(
+    sourceId: number,
+    operation: string,
+  ): Promise<{ message: string; bytesFreed: number; dryRun: boolean }> {
     const source = await this.mustFind(sourceId);
     const ops = await this.operations(sourceId);
     const op = ops.find((o) => o.key === operation);
-    if (!op) throw new BadRequestException(`Unknown operation '${operation}' for ${source.type}`);
+    if (!op)
+      throw new BadRequestException(
+        `Unknown operation '${operation}' for ${source.type}`,
+      );
     if (!op.available) throw new BadRequestException(op.unavailableReason);
 
     if (source.type === 'plex') return this.runPlex(source, operation);
@@ -99,34 +153,55 @@ export class MaintenanceService {
     const base = source.baseUrl.replace(/\/$/, '');
     switch (operation) {
       case 'photo-transcoder-cache': {
-        const appdata = (await this.settings.get('maintenance')).appdataPaths[String(source.id)];
-        return this.purgeDirectory(source, path.join(appdata, PLEX_PHOTO_TRANSCODER), 'PhotoTranscoder cache');
+        const appdata = (await this.settings.get('maintenance')).appdataPaths[
+          String(source.id)
+        ];
+        return this.purgeDirectory(
+          source,
+          path.join(appdata, PLEX_PHOTO_TRANSCODER),
+          'PhotoTranscoder cache',
+        );
       }
       case 'clean-bundles':
-        await sendJson('PUT', `${base}/library/clean/bundles?${token}`, undefined);
+        await sendJson(
+          'PUT',
+          `${base}/library/clean/bundles?${token}`,
+          undefined,
+        );
         return this.logApiOp(source, 'Triggered Plex "Clean Bundles"');
       case 'optimize-db':
         await sendJson('PUT', `${base}/library/optimize?${token}`, undefined);
         return this.logApiOp(source, 'Triggered Plex "Optimize Database"');
       case 'empty-trash': {
-        const libs = await getJson<{ MediaContainer: { Directory?: { key: string }[] } }>(
-          `${base}/library/sections?${token}`,
-          { Accept: 'application/json' },
-        );
+        const libs = await getJson<{
+          MediaContainer: { Directory?: { key: string }[] };
+        }>(`${base}/library/sections?${token}`, { Accept: 'application/json' });
         for (const dir of libs.MediaContainer.Directory ?? []) {
-          await sendJson('PUT', `${base}/library/sections/${dir.key}/emptyTrash?${token}`, undefined);
+          await sendJson(
+            'PUT',
+            `${base}/library/sections/${dir.key}/emptyTrash?${token}`,
+            undefined,
+          );
         }
         return this.logApiOp(source, 'Emptied trash in all Plex libraries');
       }
       default:
-        throw new BadRequestException(`Unhandled Plex operation '${operation}'`);
+        throw new BadRequestException(
+          `Unhandled Plex operation '${operation}'`,
+        );
     }
   }
 
   private async runJellyfin(source: MediaSource, operation: string) {
     if (operation === 'cache-dir-purge') {
-      const appdata = (await this.settings.get('maintenance')).appdataPaths[String(source.id)];
-      return this.purgeDirectory(source, path.join(appdata, JELLYFIN_CACHE_DIR), 'Jellyfin cache directory');
+      const appdata = (await this.settings.get('maintenance')).appdataPaths[
+        String(source.id)
+      ];
+      return this.purgeDirectory(
+        source,
+        path.join(appdata, JELLYFIN_CACHE_DIR),
+        'Jellyfin cache directory',
+      );
     }
     const keyByOp: Record<string, string> = {
       'clean-cache': 'DeleteCacheFiles',
@@ -134,19 +209,37 @@ export class MaintenanceService {
       'optimize-db': 'OptimizeDatabase',
     };
     const taskKey = keyByOp[operation];
-    if (!taskKey) throw new BadRequestException(`Unhandled Jellyfin operation '${operation}'`);
-    const headers = { 'X-Emby-Token': source.token, Accept: 'application/json' };
+    if (!taskKey)
+      throw new BadRequestException(
+        `Unhandled Jellyfin operation '${operation}'`,
+      );
+    const headers = {
+      'X-Emby-Token': source.token,
+      Accept: 'application/json',
+    };
     const base = source.baseUrl.replace(/\/$/, '');
     const tasks = await getJson<JfTask[]>(`${base}/ScheduledTasks`, headers);
     const task = tasks.find((t) => t.Key === taskKey);
-    if (!task) throw new NotFoundException(`Jellyfin scheduled task '${taskKey}' not found on the server`);
-    await sendJson('POST', `${base}/ScheduledTasks/Running/${task.Id}`, undefined, headers);
+    if (!task)
+      throw new NotFoundException(
+        `Jellyfin scheduled task '${taskKey}' not found on the server`,
+      );
+    await sendJson(
+      'POST',
+      `${base}/ScheduledTasks/Running/${task.Id}`,
+      undefined,
+      headers,
+    );
     return this.logApiOp(source, `Triggered Jellyfin "${task.Name}" task`);
   }
 
   /** Delete every entry inside dir (never dir itself). Honors dry-run. */
-  private async purgeDirectory(source: MediaSource, dir: string, label: string) {
-    let stat;
+  private async purgeDirectory(
+    source: MediaSource,
+    dir: string,
+    label: string,
+  ) {
+    let stat: Stats;
     try {
       stat = await fs.stat(dir);
     } catch {
@@ -154,7 +247,8 @@ export class MaintenanceService {
         `${dir} is not reachable from this container — check the appdata path in Settings → Maintenance and your volume mounts.`,
       );
     }
-    if (!stat.isDirectory()) throw new BadRequestException(`${dir} is not a directory`);
+    if (!stat.isDirectory())
+      throw new BadRequestException(`${dir} is not a directory`);
 
     const bytes = await this.directorySize(dir);
     const { dryRun } = await this.settings.get('general');
@@ -166,7 +260,11 @@ export class MaintenanceService {
         0,
         true,
       );
-      return { message: `Dry run: would free ${gb(bytes)} from ${label}.`, bytesFreed: 0, dryRun: true };
+      return {
+        message: `Dry run: would free ${gb(bytes)} from ${label}.`,
+        bytesFreed: 0,
+        dryRun: true,
+      };
     }
 
     for (const entry of await fs.readdir(dir)) {
@@ -178,13 +276,21 @@ export class MaintenanceService {
       { sourceId: source.id, dir },
       bytes,
     );
-    return { message: `Freed ${gb(bytes)} from ${label}.`, bytesFreed: bytes, dryRun: false };
+    return {
+      message: `Freed ${gb(bytes)} from ${label}.`,
+      bytesFreed: bytes,
+      dryRun: false,
+    };
   }
 
   private async logApiOp(source: MediaSource, message: string) {
-    await this.activity.log('maintenance.task-run', `${message} on ${source.name}`, {
-      sourceId: source.id,
-    });
+    await this.activity.log(
+      'maintenance.task-run',
+      `${message} on ${source.name}`,
+      {
+        sourceId: source.id,
+      },
+    );
     return { message, bytesFreed: 0, dryRun: false };
   }
 

@@ -10,7 +10,13 @@ import {
   Post,
   Put,
 } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiProperty, ApiPropertyOptional, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiProperty,
+  ApiPropertyOptional,
+  ApiTags,
+} from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { Type } from 'class-transformer';
@@ -26,7 +32,10 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { CustomRule } from '../database/entities/custom-rule.entity';
-import type { CustomRuleAppliesTo, CustomRuleMatch } from '../database/entities/custom-rule.entity';
+import type {
+  CustomRuleAppliesTo,
+  CustomRuleMatch,
+} from '../database/entities/custom-rule.entity';
 import { MediaItem } from '../database/entities/media-item.entity';
 import { Scan } from '../database/entities/scan.entity';
 import { MediaSource } from '../database/entities/media-source.entity';
@@ -40,15 +49,25 @@ import {
 } from './custom-rules.engine';
 
 class ConditionDto {
-  @ApiProperty({ description: 'Field key from GET /custom-rules/fields', example: 'ageDays' })
+  @ApiProperty({
+    description: 'Field key from GET /custom-rules/fields',
+    example: 'ageDays',
+  })
   @IsString()
   field: string;
 
-  @ApiProperty({ description: 'Operator valid for the field type', example: 'gt' })
+  @ApiProperty({
+    description: 'Operator valid for the field type',
+    example: 'gt',
+  })
   @IsString()
   operator: string;
 
-  @ApiProperty({ description: 'Comparison value', example: 180, oneOf: [{ type: 'number' }, { type: 'string' }] })
+  @ApiProperty({
+    description: 'Comparison value',
+    example: 180,
+    oneOf: [{ type: 'number' }, { type: 'string' }],
+  })
   @IsDefined() // whitelist mode strips undecorated properties — keep the value!
   value: number | string;
 }
@@ -58,7 +77,9 @@ class UpsertCustomRuleDto {
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ example: 'Kids library items nobody has played in 6 months' })
+  @ApiPropertyOptional({
+    example: 'Kids library items nobody has played in 6 months',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -67,7 +88,10 @@ class UpsertCustomRuleDto {
   @IsIn(['movie', 'show', 'both'])
   appliesTo: CustomRuleAppliesTo;
 
-  @ApiProperty({ enum: ['all', 'any'], description: 'Combine conditions with AND (all) or OR (any)' })
+  @ApiProperty({
+    enum: ['all', 'any'],
+    description: 'Combine conditions with AND (all) or OR (any)',
+  })
   @IsIn(['all', 'any'])
   match: CustomRuleMatch;
 
@@ -78,7 +102,10 @@ class UpsertCustomRuleDto {
   @Type(() => ConditionDto)
   conditions: ConditionDto[];
 
-  @ApiProperty({ example: 30, description: 'Points added to the item score when the rule matches' })
+  @ApiProperty({
+    example: 30,
+    description: 'Points added to the item score when the rule matches',
+  })
   @IsNumber()
   points: number;
 
@@ -93,24 +120,32 @@ class PreviewItemDto {
   @ApiProperty({ nullable: true }) year: number | null;
   @ApiProperty() libraryName: string;
   @ApiProperty() sizeBytes: number;
-  @ApiProperty({ description: 'Auto-generated explanation of the matched conditions' }) reason: string;
+  @ApiProperty({
+    description: 'Auto-generated explanation of the matched conditions',
+  })
+  reason: string;
 }
 
 class PreviewResultDto {
-  @ApiProperty({ description: 'Items in the latest scan the rule would match' }) matchCount: number;
+  @ApiProperty({ description: 'Items in the latest scan the rule would match' })
+  matchCount: number;
   @ApiProperty() totalSizeBytes: number;
-  @ApiProperty({ description: 'Items evaluated (latest completed scan)' }) itemCount: number;
-  @ApiProperty({ type: [PreviewItemDto], description: 'Largest 20 matches' }) sample: PreviewItemDto[];
+  @ApiProperty({ description: 'Items evaluated (latest completed scan)' })
+  itemCount: number;
+  @ApiProperty({ type: [PreviewItemDto], description: 'Largest 20 matches' })
+  sample: PreviewItemDto[];
 }
 
 @ApiTags('custom-rules')
 @Controller('custom-rules')
 export class CustomRulesController {
   constructor(
-    @InjectRepository(CustomRule) private readonly rules: Repository<CustomRule>,
+    @InjectRepository(CustomRule)
+    private readonly rules: Repository<CustomRule>,
     @InjectRepository(MediaItem) private readonly items: Repository<MediaItem>,
     @InjectRepository(Scan) private readonly scans: Repository<Scan>,
-    @InjectRepository(MediaSource) private readonly sources: Repository<MediaSource>,
+    @InjectRepository(MediaSource)
+    private readonly sources: Repository<MediaSource>,
     private readonly registry: ProviderRegistry,
   ) {}
 
@@ -122,7 +157,25 @@ export class CustomRulesController {
   })
   fields() {
     return {
-      fields: CUSTOM_RULE_FIELDS.map(({ get: _get, ...meta }) => meta),
+      fields: CUSTOM_RULE_FIELDS.map(
+        ({
+          key,
+          label,
+          type,
+          appliesTo,
+          requires,
+          enumValues,
+          description,
+        }) => ({
+          key,
+          label,
+          type,
+          appliesTo,
+          requires,
+          enumValues,
+          description,
+        }),
+      ),
       operators: OPERATORS_BY_TYPE,
     };
   }
@@ -142,7 +195,10 @@ export class CustomRulesController {
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a custom rule' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpsertCustomRuleDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpsertCustomRuleDto,
+  ) {
     const rule = await this.rules.findOneBy({ id });
     if (!rule) throw new NotFoundException(`Custom rule ${id} not found`);
     this.validateConditions(dto);
@@ -165,13 +221,20 @@ export class CustomRulesController {
   @ApiOkResponse({ type: PreviewResultDto })
   async preview(@Body() dto: UpsertCustomRuleDto): Promise<PreviewResultDto> {
     this.validateConditions(dto);
-    const latest = await this.scans.findOne({ where: { status: 'completed' }, order: { id: 'DESC' } });
+    const latest = await this.scans.findOne({
+      where: { status: 'completed' },
+      order: { id: 'DESC' },
+    });
     if (!latest) {
       return { matchCount: 0, totalSizeBytes: 0, itemCount: 0, sample: [] };
     }
     const items = await this.items.findBy({ scanId: latest.id });
-    const sourceRows = await this.sources.findBy({ id: In([...new Set(items.map((i) => i.sourceId))]) });
-    const caps = new Map(sourceRows.map((s) => [s.id, this.registry.get(s.type).capabilities]));
+    const sourceRows = await this.sources.findBy({
+      id: In([...new Set(items.map((i) => i.sourceId))]),
+    });
+    const caps = new Map(
+      sourceRows.map((s) => [s.id, this.registry.get(s.type).capabilities]),
+    );
 
     const now = new Date();
     const matches: PreviewItemDto[] = [];
@@ -202,14 +265,22 @@ export class CustomRulesController {
   private validateConditions(dto: UpsertCustomRuleDto): void {
     for (const cond of dto.conditions) {
       const field = FIELD_BY_KEY.get(cond.field);
-      if (!field) throw new BadRequestException(`Unknown field '${cond.field}'`);
+      if (!field)
+        throw new BadRequestException(`Unknown field '${cond.field}'`);
       if (!operatorValid(field, cond.operator)) {
-        throw new BadRequestException(`Operator '${cond.operator}' is not valid for field '${cond.field}'`);
+        throw new BadRequestException(
+          `Operator '${cond.operator}' is not valid for field '${cond.field}'`,
+        );
       }
       if (field.type === 'number' && isNaN(Number(cond.value))) {
-        throw new BadRequestException(`Field '${cond.field}' needs a numeric value`);
+        throw new BadRequestException(
+          `Field '${cond.field}' needs a numeric value`,
+        );
       }
-      if (field.type === 'enum' && !field.enumValues?.includes(String(cond.value))) {
+      if (
+        field.type === 'enum' &&
+        !field.enumValues?.includes(String(cond.value))
+      ) {
         throw new BadRequestException(
           `Field '${cond.field}' accepts: ${field.enumValues?.join(', ')}`,
         );

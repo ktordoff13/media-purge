@@ -46,19 +46,33 @@ export interface AiSettings {
   model: string;
 }
 
-export const SETTINGS_DEFAULTS = {
+export interface AllSettings {
+  general: GeneralSettings;
+  pathMappings: PathMapping[];
+  radarr: ArrSettings;
+  sonarr: ArrSettings;
+  maintenance: MaintenanceSettings;
+  security: SecuritySettings;
+  ai: AiSettings;
+}
+
+export const SETTINGS_DEFAULTS: AllSettings = {
   general: {
     dryRun: true,
     recycleBinDir: process.env.RECYCLE_BIN_DIR ?? '/recycle-bin',
     retentionDays: 30,
     scanCron: null,
-  } as GeneralSettings,
-  pathMappings: [] as PathMapping[],
-  radarr: { enabled: false, baseUrl: '', apiKey: '' } as ArrSettings,
-  sonarr: { enabled: false, baseUrl: '', apiKey: '' } as ArrSettings,
-  maintenance: { appdataPaths: {} } as MaintenanceSettings,
-  security: { apiKey: null } as SecuritySettings,
-  ai: { enabled: false, baseUrl: 'http://localhost:11434', model: 'llama3.1' } as AiSettings,
+  },
+  pathMappings: [],
+  radarr: { enabled: false, baseUrl: '', apiKey: '' },
+  sonarr: { enabled: false, baseUrl: '', apiKey: '' },
+  maintenance: { appdataPaths: {} },
+  security: { apiKey: null },
+  ai: {
+    enabled: false,
+    baseUrl: 'http://localhost:11434',
+    model: 'llama3.1',
+  },
 };
 
 export type SettingsKey = keyof typeof SETTINGS_DEFAULTS;
