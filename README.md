@@ -70,14 +70,6 @@ unwatched · ended & fully watched series · poorly rated & never played · grow
 watches. Each has tunable thresholds and points; items past the score threshold become
 recommendations.
 
-## Roadmap
-
-- Webhook/Discord notifications ("scan found 214 GB reclaimable")
-- Storage trend charts (scan snapshots are already stored)
-- Household keep/delete voting before purge
-- Overseerr/Jellyseerr context (who requested it)
-- Emby provider (the abstraction already supports it)
-
 ## License
 
 MIT

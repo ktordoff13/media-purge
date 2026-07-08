@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>media-purge</Name>
-  <Repository>ktordoff/media-purge:latest</Repository>
-  <Registry>https://hub.docker.com/r/ktordoff/media-purge</Registry>
+  <Repository>ktordoff13/media-purge:latest</Repository>
+  <Registry>https://hub.docker.com/r/ktordoff13/media-purge</Registry>
   <Network>bridge</Network>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/ktordoff/media-purge/issues</Support>
-  <Project>https://github.com/ktordoff/media-purge</Project>
+  <Support>https://github.com/ktordoff13/media-purge/issues</Support>
+  <Project>https://github.com/ktordoff13/media-purge</Project>
   <Overview>
     Rule-based media cleanup for Plex and Jellyfin. Scans your libraries, recommends what to
     delete (never watched, watched years ago, duplicates, low quality, dead series...) with a
@@ -19,7 +19,7 @@
   </Overview>
   <Category>MediaApp:Other Tools:Utilities</Category>
   <WebUI>http://[IP]:[PORT:8484]/</WebUI>
-  <Icon>https://raw.githubusercontent.com/ktordoff/media-purge/main/docs/icon.png</Icon>
+  <Icon>https://raw.githubusercontent.com/ktordoff13/media-purge/main/docs/icon.png</Icon>
   <ExtraParams/>
   <PostArgs/>
   <Config Name="WebUI Port" Target="8484" Default="8484" Mode="tcp" Description="Web UI and API port" Type="Port" Display="always" Required="true" Mask="false">8484</Config>
