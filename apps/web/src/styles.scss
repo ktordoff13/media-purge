@@ -1,13 +1,14 @@
 @use '@angular/material' as mat;
 
 html {
-  color-scheme: dark;
+  // Follow the browser/OS preference; every color token becomes light-dark().
+  color-scheme: light dark;
 
   @include mat.theme((
     color: (
       primary: mat.$violet-palette,
       tertiary: mat.$cyan-palette,
-      theme-type: dark,
+      theme-type: color-scheme,
     ),
     typography: (
       plain-family: Roboto,
@@ -33,6 +34,10 @@ body {
   padding: 24px;
   max-width: 1400px;
   margin: 0 auto;
+
+  @media (max-width: 899px) {
+    padding: 16px 12px;
+  }
 }
 
 .page-title {
@@ -52,6 +57,17 @@ body {
 
 .spacer {
   flex: 1;
+}
+
+/* Slide toggles: Material only puts 4px between the switch and its label,
+   which reads as glued together next to the wide M3 track. */
+mat-slide-toggle .mat-internal-form-field > label {
+  padding-left: 12px;
+}
+
+[dir='rtl'] mat-slide-toggle .mat-internal-form-field > label {
+  padding-left: 0;
+  padding-right: 12px;
 }
 
 /* Reusable stat tile row used on dashboard + maintenance */

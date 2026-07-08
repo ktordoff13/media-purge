@@ -70,8 +70,8 @@ import { MaintenanceOperation, MediaSource } from '../core/models';
     </div>
   `,
   styles: `
-    .source-select { width: 320px; }
-    .ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+    .source-select { width: 320px; max-width: 100%; }
+    .ops-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 360px), 1fr)); gap: 16px; }
     .op-card { border-radius: 14px; background: var(--mat-sys-surface-container); padding: 18px 20px; }
     .op-card.unavailable { opacity: 0.65; }
     .op-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }

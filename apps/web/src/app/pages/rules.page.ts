@@ -251,7 +251,7 @@ function blankRule(): CustomRule {
     </div>
   `,
   styles: `
-    .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
+    .rules-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 16px; }
     .rule-card, .custom-card { border-radius: 14px; background: var(--mat-sys-surface-container); padding: 18px 20px;
       transition: opacity 0.2s; }
     .rule-card.disabled, .custom-card.disabled { opacity: 0.55; }

@@ -43,6 +43,13 @@ mat-nav-list a {
   margin: 2px 8px;
 }
 
+.sidenav-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 8px;
+}
+
 .api-docs-link {
   display: flex;
   align-items: center;
@@ -54,6 +61,57 @@ mat-nav-list a {
 
   &:hover {
     color: var(--mat-sys-primary);
+  }
+}
+
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  color: var(--mat-sys-on-surface-variant);
+
+  &:hover {
+    color: var(--mat-sys-primary);
+    background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+  }
+}
+
+.mobile-bar {
+  position: sticky;
+  top: 0;
+  z-index: 11;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  background: var(--mat-sys-surface-container-low);
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  .menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    cursor: pointer;
+    color: var(--mat-sys-on-surface);
+  }
+
+  .mobile-brand-icon {
+    color: var(--mat-sys-primary);
+  }
+
+  .mobile-brand-name {
+    font: var(--mat-sys-title-medium);
   }
 }
 
@@ -76,5 +134,12 @@ mat-nav-list a {
 
   &:hover {
     background: color-mix(in srgb, var(--mat-sys-error) 28%, var(--mat-sys-error-container));
+  }
+}
+
+@media (max-width: 899px) {
+  // Stick below the mobile bar instead of underneath it.
+  .live-banner {
+    top: 57px;
   }
 }

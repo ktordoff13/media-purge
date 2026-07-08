@@ -15,9 +15,12 @@ export class BytesPipe implements PipeTransform {
 export class TimeAgoPipe implements PipeTransform {
   transform(value: string | Date | null | undefined): string {
     if (!value) return 'never';
-    const then = new Date(value).getTime();
-    if (isNaN(then)) return 'never';
-    const days = Math.floor((Date.now() - then) / 86_400_000);
+    const then = new Date(value);
+    if (isNaN(then.getTime())) return 'never';
+    // Calendar days in local time, not elapsed 24h periods — a scan last
+    // evening must read "yesterday" this morning. Round absorbs DST-shifted days.
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const days = Math.round((startOfDay(new Date()) - startOfDay(then)) / 86_400_000);
     if (days <= 0) return 'today';
     if (days === 1) return 'yesterday';
     if (days < 30) return `${days} days ago`;

@@ -87,8 +87,8 @@ const TYPE_ICONS: Record<string, string> = {
     </div>
   `,
   styles: `
-    .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
-    .type-filter { width: 280px; }
+    .header-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+    .type-filter { width: 280px; max-width: 100%; }
     .timeline { display: flex; flex-direction: column; }
     .event { display: flex; gap: 14px; padding: 10px 4px; border-bottom: 1px solid var(--mat-sys-outline-variant); }
     .event-icon { color: var(--mat-sys-on-surface-variant); margin-top: 2px; }

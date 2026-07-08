@@ -1,5 +1,10 @@
 <mat-sidenav-container class="shell">
-  <mat-sidenav mode="side" opened class="sidenav">
+  <mat-sidenav
+    class="sidenav"
+    [mode]="isMobile() ? 'over' : 'side'"
+    [opened]="isMobile() ? navOpen() : true"
+    (openedChange)="navOpen.set($event)"
+  >
     <div class="brand">
       <mat-icon class="brand-icon">movie_filter</mat-icon>
       <div>
@@ -9,18 +14,37 @@
     </div>
     <mat-nav-list>
       @for (item of nav; track item.path) {
-        <a mat-list-item [routerLink]="item.path" routerLinkActive="active-link">
+        <a mat-list-item [routerLink]="item.path" routerLinkActive="active-link" (click)="closeNavOnMobile()">
           <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
           <span matListItemTitle>{{ item.label }}</span>
         </a>
       }
     </mat-nav-list>
     <div class="spacer"></div>
-    <a class="api-docs-link" href="/api/docs" target="_blank" rel="noopener">
-      <mat-icon>api</mat-icon> API docs
-    </a>
+    <div class="sidenav-footer">
+      <a class="api-docs-link" href="/api/docs" target="_blank" rel="noopener">
+        <mat-icon>api</mat-icon> API docs
+      </a>
+      <button
+        class="theme-toggle"
+        (click)="theme.cycle()"
+        [matTooltip]="themeLabels[theme.mode()] + ' — click to change'"
+        [attr.aria-label]="themeLabels[theme.mode()]"
+      >
+        <mat-icon>{{ themeIcons[theme.mode()] }}</mat-icon>
+      </button>
+    </div>
   </mat-sidenav>
   <mat-sidenav-content>
+    @if (isMobile()) {
+      <div class="mobile-bar">
+        <button class="menu-btn" (click)="navOpen.set(true)" aria-label="Open navigation">
+          <mat-icon>menu</mat-icon>
+        </button>
+        <mat-icon class="mobile-brand-icon">movie_filter</mat-icon>
+        <span class="mobile-brand-name">Media Purge</span>
+      </div>
+    }
     @if (dryRunState.dryRun() === false) {
       <a
         class="live-banner"

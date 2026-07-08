@@ -234,6 +234,11 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
       color: var(--mat-sys-on-surface-variant);
       mat-icon { font-size: 44px; width: 44px; height: 44px; } }
     @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 599px) {
+      .rec-main { flex-wrap: wrap; }
+      .rec-side { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; }
+      .rec-actions { margin-top: 0; margin-left: auto; }
+    }
   `,
 })
 export class RecommendationsPage implements OnInit {

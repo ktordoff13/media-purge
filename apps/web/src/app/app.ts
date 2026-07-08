@@ -1,10 +1,14 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { map } from 'rxjs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DryRunStateService } from './core/dry-run-state.service';
+import { ThemeService } from './core/theme.service';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +18,23 @@ import { DryRunStateService } from './core/dry-run-state.service';
 })
 export class App implements OnInit {
   readonly dryRunState = inject(DryRunStateService);
+  readonly theme = inject(ThemeService);
+
+  readonly themeIcons = { auto: 'brightness_auto', light: 'light_mode', dark: 'dark_mode' } as const;
+  readonly themeLabels = { auto: 'System theme', light: 'Light theme', dark: 'Dark theme' } as const;
+
+  // Below this the sidenav becomes an overlay drawer behind a hamburger bar.
+  readonly isMobile = toSignal(
+    inject(BreakpointObserver)
+      .observe('(max-width: 899px)')
+      .pipe(map((r) => r.matches)),
+    { initialValue: false },
+  );
+  readonly navOpen = signal(false);
+
+  closeNavOnMobile(): void {
+    if (this.isMobile()) this.navOpen.set(false);
+  }
 
   ngOnInit(): void {
     this.dryRunState.refresh();

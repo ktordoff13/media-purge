@@ -1,4 +1,8 @@
-import { Routes } from '@angular/router';
+import { CanDeactivateFn, Routes } from '@angular/router';
+
+const confirmUnsavedChanges: CanDeactivateFn<{ hasUnsavedChanges(): boolean }> = (component) =>
+  !component.hasUnsavedChanges() ||
+  confirm('You have unsaved changes that will be lost. Leave without saving?');
 
 export const routes: Routes = [
   { path: '', pathMatch: 'full', redirectTo: 'dashboard' },
@@ -36,6 +40,7 @@ export const routes: Routes = [
     path: 'settings',
     title: 'Settings · Media Purge',
     loadComponent: () => import('./pages/settings.page').then((m) => m.SettingsPage),
+    canDeactivate: [confirmUnsavedChanges],
   },
   { path: '**', redirectTo: 'dashboard' },
 ];

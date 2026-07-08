@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, HostListener, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -26,6 +26,9 @@ import {
 interface EditableSource extends Partial<MediaSource> {
   testResult?: string;
   testOk?: boolean;
+  dirty?: boolean;
+  /** Fingerprint of the last loaded/saved state; dirty = current differs. */
+  pristine?: string;
 }
 
 @Component({
@@ -55,26 +58,26 @@ interface EditableSource extends Partial<MediaSource> {
                 <div class="row">
                   <mat-form-field appearance="outline" class="grow">
                     <mat-label>Name</mat-label>
-                    <input matInput [(ngModel)]="source.name" placeholder="Living-room Plex" />
+                    <input matInput [(ngModel)]="source.name" (ngModelChange)="markSourceDirty(source)" placeholder="Living-room Plex" />
                   </mat-form-field>
                   <mat-form-field appearance="outline">
                     <mat-label>Type</mat-label>
-                    <mat-select [(ngModel)]="source.type">
+                    <mat-select [(ngModel)]="source.type" (ngModelChange)="markSourceDirty(source)">
                       @for (pt of providerTypes(); track pt.type) {
                         <mat-option [value]="pt.type">{{ pt.displayName }}</mat-option>
                       }
                     </mat-select>
                   </mat-form-field>
-                  <mat-slide-toggle [(ngModel)]="source.enabled">Enabled</mat-slide-toggle>
+                  <mat-slide-toggle [(ngModel)]="source.enabled" (ngModelChange)="markSourceDirty(source)">Enabled</mat-slide-toggle>
                 </div>
                 <div class="row">
                   <mat-form-field appearance="outline" class="grow">
                     <mat-label>Server URL</mat-label>
-                    <input matInput [(ngModel)]="source.baseUrl" placeholder="http://192.168.1.10:32400" />
+                    <input matInput [(ngModel)]="source.baseUrl" (ngModelChange)="markSourceDirty(source)" placeholder="http://192.168.1.10:32400" />
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="grow">
                     <mat-label>{{ source.type === 'plex' ? 'X-Plex-Token' : 'API key (admin)' }}</mat-label>
-                    <input matInput [(ngModel)]="source.token" type="password" />
+                    <input matInput [(ngModel)]="source.token" (ngModelChange)="markSourceDirty(source)" type="password" />
                     <mat-icon
                       matSuffix
                       [matTooltip]="source.type === 'plex'
@@ -90,14 +93,17 @@ interface EditableSource extends Partial<MediaSource> {
                     </span>
                   }
                   <span class="spacer"></span>
+                  @if (source.dirty) {
+                    <span class="unsaved-hint"><mat-icon>edit</mat-icon> Unsaved changes</span>
+                  }
                   <button matButton (click)="testSource(source)" [disabled]="!source.baseUrl || !source.token">
                     <mat-icon>network_check</mat-icon> Test
                   </button>
                   @if (source.id) {
                     <button matButton class="danger" (click)="deleteSource(source)"><mat-icon>delete</mat-icon> Remove</button>
                   }
-                  <button matButton="filled" (click)="saveSource(source)">
-                    {{ source.id ? 'Save' : 'Add source' }}
+                  <button matButton="filled" [class.attention]="source.dirty" (click)="saveSource(source)">
+                    {{ source.id ? (source.dirty ? 'Save changes' : 'Save') : 'Add source' }}
                   </button>
                 </div>
               </div>
@@ -163,12 +169,12 @@ interface EditableSource extends Partial<MediaSource> {
               <div class="row">
                 <mat-form-field appearance="outline" class="grow">
                   <mat-label>Media server path prefix</mat-label>
-                  <input matInput [(ngModel)]="mapping.from" placeholder="/data/media" />
+                  <input matInput [(ngModel)]="mapping.from" (ngModelChange)="markDirty('mappings')" placeholder="/data/media" />
                 </mat-form-field>
                 <mat-icon class="arrow">arrow_forward</mat-icon>
                 <mat-form-field appearance="outline" class="grow">
                   <mat-label>This container's path prefix</mat-label>
-                  <input matInput [(ngModel)]="mapping.to" placeholder="/media" />
+                  <input matInput [(ngModel)]="mapping.to" (ngModelChange)="markDirty('mappings')" placeholder="/media" />
                 </mat-form-field>
                 <button matIconButton (click)="removeMapping($index)"><mat-icon>delete</mat-icon></button>
               </div>
@@ -176,7 +182,12 @@ interface EditableSource extends Partial<MediaSource> {
             <div class="row">
               <button matButton (click)="addMapping()"><mat-icon>add</mat-icon> Add mapping</button>
               <span class="spacer"></span>
-              <button matButton="filled" (click)="saveMappings()">Save mappings</button>
+              @if (isDirty('mappings')) {
+                <span class="unsaved-hint"><mat-icon>edit</mat-icon> Unsaved changes</span>
+              }
+              <button matButton="filled" [class.attention]="isDirty('mappings')" (click)="saveMappings()">
+                {{ isDirty('mappings') ? 'Save changes' : 'Save mappings' }}
+              </button>
             </div>
           </div>
         </mat-tab>
@@ -189,21 +200,26 @@ interface EditableSource extends Partial<MediaSource> {
                 <div class="card">
                   <div class="row">
                     <div class="arr-name">{{ kind === 'radarr' ? 'Radarr' : 'Sonarr' }}</div>
-                    <mat-slide-toggle [(ngModel)]="a.enabled">
+                    <mat-slide-toggle [(ngModel)]="a.enabled" (ngModelChange)="markDirty(kind)">
                       Unmonitor on approve (prevents re-downloads)
                     </mat-slide-toggle>
                   </div>
                   <div class="row">
                     <mat-form-field appearance="outline" class="grow">
                       <mat-label>URL</mat-label>
-                      <input matInput [(ngModel)]="a.baseUrl" [placeholder]="kind === 'radarr' ? 'http://192.168.1.10:7878' : 'http://192.168.1.10:8989'" />
+                      <input matInput [(ngModel)]="a.baseUrl" (ngModelChange)="markDirty(kind)" [placeholder]="kind === 'radarr' ? 'http://192.168.1.10:7878' : 'http://192.168.1.10:8989'" />
                     </mat-form-field>
                     <mat-form-field appearance="outline" class="grow">
                       <mat-label>API key</mat-label>
-                      <input matInput [(ngModel)]="a.apiKey" type="password" />
+                      <input matInput [(ngModel)]="a.apiKey" (ngModelChange)="markDirty(kind)" type="password" />
                     </mat-form-field>
+                    @if (isDirty(kind)) {
+                      <span class="unsaved-hint"><mat-icon>edit</mat-icon> Unsaved changes</span>
+                    }
                     <button matButton (click)="testArr(kind)"><mat-icon>network_check</mat-icon> Test</button>
-                    <button matButton="filled" (click)="saveArr(kind)">Save</button>
+                    <button matButton="filled" [class.attention]="isDirty(kind)" (click)="saveArr(kind)">
+                      {{ isDirty(kind) ? 'Save changes' : 'Save' }}
+                    </button>
                   </div>
                 </div>
               }
@@ -212,7 +228,7 @@ interface EditableSource extends Partial<MediaSource> {
               <div class="card">
                 <div class="row">
                   <div class="arr-name">Local AI</div>
-                  <mat-slide-toggle [(ngModel)]="a.enabled">
+                  <mat-slide-toggle [(ngModel)]="a.enabled" (ngModelChange)="markDirty('ai')">
                     "You might regret this" notes on recommendations
                   </mat-slide-toggle>
                 </div>
@@ -225,14 +241,19 @@ interface EditableSource extends Partial<MediaSource> {
                 <div class="row">
                   <mat-form-field appearance="outline" class="grow">
                     <mat-label>Server URL</mat-label>
-                    <input matInput [(ngModel)]="a.baseUrl" placeholder="http://192.168.1.10:11434" />
+                    <input matInput [(ngModel)]="a.baseUrl" (ngModelChange)="markDirty('ai')" placeholder="http://192.168.1.10:11434" />
                   </mat-form-field>
                   <mat-form-field appearance="outline" class="grow">
                     <mat-label>Model</mat-label>
-                    <input matInput [(ngModel)]="a.model" placeholder="llama3.1" />
+                    <input matInput [(ngModel)]="a.model" (ngModelChange)="markDirty('ai')" placeholder="llama3.1" />
                   </mat-form-field>
+                  @if (isDirty('ai')) {
+                    <span class="unsaved-hint"><mat-icon>edit</mat-icon> Unsaved changes</span>
+                  }
                   <button matButton (click)="testAiConn()"><mat-icon>network_check</mat-icon> Test</button>
-                  <button matButton="filled" (click)="saveAi()">Save</button>
+                  <button matButton="filled" [class.attention]="isDirty('ai')" (click)="saveAi()">
+                    {{ isDirty('ai') ? 'Save changes' : 'Save' }}
+                  </button>
                 </div>
               </div>
             }
@@ -258,7 +279,7 @@ interface EditableSource extends Partial<MediaSource> {
                     <input
                       matInput
                       [ngModel]="ms.appdataPaths[source.id]"
-                      (ngModelChange)="ms.appdataPaths[source.id!] = $event"
+                      (ngModelChange)="ms.appdataPaths[source.id!] = $event; markDirty('appdata')"
                     />
                   </mat-form-field>
                 </div>
@@ -266,7 +287,12 @@ interface EditableSource extends Partial<MediaSource> {
             }
             <div class="row">
               <span class="spacer"></span>
-              <button matButton="filled" (click)="saveMaintenance()">Save appdata paths</button>
+              @if (isDirty('appdata')) {
+                <span class="unsaved-hint"><mat-icon>edit</mat-icon> Unsaved changes</span>
+              }
+              <button matButton="filled" [class.attention]="isDirty('appdata')" (click)="saveMaintenance()">
+                {{ isDirty('appdata') ? 'Save changes' : 'Save appdata paths' }}
+              </button>
             </div>
           </div>
         </mat-tab>
@@ -279,10 +305,15 @@ interface EditableSource extends Partial<MediaSource> {
                 <div class="row">
                   <mat-form-field appearance="outline" class="grow">
                     <mat-label>API key (optional)</mat-label>
-                    <input matInput [ngModel]="sec.apiKey" (ngModelChange)="sec.apiKey = $event || null" type="password" />
+                    <input matInput [ngModel]="sec.apiKey" (ngModelChange)="sec.apiKey = $event || null; markDirty('security')" type="password" />
                     <mat-icon matSuffix matTooltip="When set, every API request must send this in the X-Api-Key header. Leave empty on a trusted LAN.">key</mat-icon>
                   </mat-form-field>
-                  <button matButton="filled" (click)="saveSecurity()">Save</button>
+                  @if (isDirty('security')) {
+                    <span class="unsaved-hint"><mat-icon>edit</mat-icon> Unsaved changes</span>
+                  }
+                  <button matButton="filled" [class.attention]="isDirty('security')" (click)="saveSecurity()">
+                    {{ isDirty('security') ? 'Save changes' : 'Save' }}
+                  </button>
                 </div>
               </div>
             }
@@ -304,12 +335,22 @@ interface EditableSource extends Partial<MediaSource> {
   `,
   styles: `
     .tab-body { padding: 20px 4px; display: flex; flex-direction: column; gap: 14px; }
-    .card { border-radius: 14px; background: var(--mat-sys-surface-container); padding: 16px 20px; }
+    .card { border-radius: 14px; background: var(--mat-sys-surface-container); padding: 16px 20px;
+      display: flex; flex-direction: column; gap: 14px; }
     .row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
     .grow { flex: 1; min-width: 220px; }
-    .actions-row { margin-top: -8px; }
     .danger { color: var(--mat-sys-error); }
     .test-result { font: var(--mat-sys-body-medium); }
+    .unsaved-hint { display: inline-flex; align-items: center; gap: 5px; font: var(--mat-sys-label-large);
+      color: var(--mat-sys-error); animation: unsaved-in 160ms ease-out;
+      mat-icon { font-size: 18px; width: 18px; height: 18px; } }
+    button.attention { animation: attention-pulse 1.6s ease-in-out infinite;
+      outline: 2px solid var(--mat-sys-primary); outline-offset: 2px; }
+    @keyframes attention-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--mat-sys-primary) 45%, transparent); }
+      50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--mat-sys-primary) 0%, transparent); }
+    }
+    @keyframes unsaved-in { from { opacity: 0; transform: translateX(4px); } to { opacity: 1; transform: none; } }
     .test-result.ok { color: var(--mat-sys-tertiary); }
     .test-result.fail { color: var(--mat-sys-error); }
     .dry-run-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -319,7 +360,7 @@ interface EditableSource extends Partial<MediaSource> {
     .explain code { background: var(--mat-sys-surface-container-high); padding: 1px 6px; border-radius: 4px; }
     .arrow { color: var(--mat-sys-on-surface-variant); }
     .arr-name { font: var(--mat-sys-title-medium); width: 90px; }
-    .ai-hint { max-width: 720px; margin: 4px 0 8px; }
+    .ai-hint { max-width: 720px; margin: 0; }
     .appdata-source { width: 220px; font: var(--mat-sys-body-large); }
     .section { font: var(--mat-sys-title-medium); margin: 16px 0 4px; }
     .protected-row { border-bottom: 1px solid var(--mat-sys-outline-variant); padding: 4px 0; }
@@ -341,23 +382,111 @@ export class SettingsPage implements OnInit {
   readonly security = signal<SecuritySettings | null>(null);
   readonly ai = signal<AiSettings | null>(null);
   readonly protectedItems = signal<ProtectedItem[]>([]);
+  private readonly dirtySections = signal<ReadonlySet<string>>(new Set());
+  private readonly pristine = new Map<string, string>();
 
   ngOnInit(): void {
     this.api.providerTypes().subscribe((types) => this.providerTypes.set(types));
-    this.api.sources().subscribe((sources) => this.sources.set(sources));
     this.api.general().subscribe((g) => this.general.set(g));
-    this.api.pathMappings().subscribe(({ mappings }) => this.mappings.set(mappings));
-    this.api.arr('radarr').subscribe((a) => this.radarr.set(a));
-    this.api.arr('sonarr').subscribe((a) => this.sonarr.set(a));
-    this.api.maintenanceSettings().subscribe((ms) => this.maintenanceSettings.set(ms));
-    this.api.security().subscribe((s) => this.security.set(s));
-    this.api.aiSettings().subscribe((a) => this.ai.set(a));
     this.api.protectedItems().subscribe((items) => this.protectedItems.set(items));
+    this.reloadSources();
+    this.api.pathMappings().subscribe(({ mappings }) => {
+      this.mappings.set(mappings);
+      this.setPristine('mappings');
+    });
+    this.api.arr('radarr').subscribe((a) => {
+      this.radarr.set(a);
+      this.setPristine('radarr');
+    });
+    this.api.arr('sonarr').subscribe((a) => {
+      this.sonarr.set(a);
+      this.setPristine('sonarr');
+    });
+    this.api.maintenanceSettings().subscribe((ms) => {
+      this.maintenanceSettings.set(ms);
+      this.setPristine('appdata');
+    });
+    this.api.security().subscribe((s) => {
+      this.security.set(s);
+      this.setPristine('security');
+    });
+    this.api.aiSettings().subscribe((a) => {
+      this.ai.set(a);
+      this.setPristine('ai');
+    });
+  }
+
+  // Dirty tracking — drives the "Unsaved changes" hint, the pulsing save
+  // button, and the leave-page warning. A section is dirty when its current
+  // state differs from the last loaded/saved snapshot, so reverting an edit
+  // by hand also clears the flag.
+  private snapshot(section: string): string {
+    switch (section) {
+      case 'mappings':
+        // Blank rows wouldn't be saved, so they don't count as changes.
+        return JSON.stringify(this.mappings().filter((m) => m.from || m.to));
+      case 'radarr':
+        return JSON.stringify(this.radarr());
+      case 'sonarr':
+        return JSON.stringify(this.sonarr());
+      case 'ai':
+        return JSON.stringify(this.ai());
+      case 'appdata': {
+        const paths = this.maintenanceSettings()?.appdataPaths ?? {};
+        return JSON.stringify(Object.entries(paths).filter(([, v]) => v).sort());
+      }
+      case 'security':
+        return JSON.stringify(this.security());
+      default:
+        return '';
+    }
+  }
+  private setPristine(section: string): void {
+    this.pristine.set(section, this.snapshot(section));
+    this.markDirty(section);
+  }
+  markDirty(section: string): void {
+    const dirty = this.snapshot(section) !== this.pristine.get(section);
+    this.dirtySections.update((s) => {
+      if (s.has(section) === dirty) return s;
+      const next = new Set(s);
+      if (dirty) next.add(section);
+      else next.delete(section);
+      return next;
+    });
+  }
+  isDirty(section: string): boolean {
+    return this.dirtySections().has(section);
+  }
+  private sourceFingerprint(s: EditableSource): string {
+    return JSON.stringify([s.name, s.type, s.baseUrl, s.token, s.enabled]);
+  }
+  markSourceDirty(source: EditableSource): void {
+    const dirty = this.sourceFingerprint(source) !== source.pristine;
+    if (source.dirty !== dirty) {
+      source.dirty = dirty;
+      this.sources.update((list) => [...list]);
+    }
+  }
+  hasUnsavedChanges(): boolean {
+    return this.dirtySections().size > 0 || this.sources().some((s) => s.dirty);
+  }
+  @HostListener('window:beforeunload', ['$event'])
+  warnBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.hasUnsavedChanges()) event.preventDefault();
   }
 
   // Sources
+  private reloadSources(): void {
+    this.api.sources().subscribe((sources) =>
+      this.sources.set(sources.map((s) => ({ ...s, pristine: this.sourceFingerprint(s) }))),
+    );
+  }
+
   addSource(): void {
-    this.sources.update((list) => [...list, { name: '', type: 'plex', baseUrl: '', token: '', enabled: true }]);
+    const blank: EditableSource = { name: '', type: 'plex', baseUrl: '', token: '', enabled: true };
+    blank.pristine = this.sourceFingerprint(blank);
+    this.sources.update((list) => [...list, blank]);
   }
 
   saveSource(source: EditableSource): void {
@@ -373,7 +502,8 @@ export class SettingsPage implements OnInit {
     req.subscribe({
       next: () => {
         this.snack.open('Source saved', 'OK', { duration: 3000 });
-        this.api.sources().subscribe((sources) => this.sources.set(sources));
+        // Reloading replaces the row objects with fresh pristine fingerprints.
+        this.reloadSources();
       },
       error: (err) => this.snack.open(this.errMsg(err), 'OK', { duration: 8000 }),
     });
@@ -443,15 +573,18 @@ export class SettingsPage implements OnInit {
   // Path mappings
   addMapping(): void {
     this.mappings.update((m) => [...m, { from: '', to: '' }]);
+    this.markDirty('mappings');
   }
   removeMapping(index: number): void {
     this.mappings.update((m) => m.filter((_, i) => i !== index));
+    this.markDirty('mappings');
   }
   saveMappings(): void {
     const clean = this.mappings().filter((m) => m.from && m.to);
     this.api.savePathMappings(clean).subscribe({
       next: () => {
         this.mappings.set(clean);
+        this.setPristine('mappings');
         this.snack.open('Path mappings saved', 'OK', { duration: 3000 });
       },
       error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
@@ -466,7 +599,10 @@ export class SettingsPage implements OnInit {
     const a = this.arrOf(kind);
     if (!a) return;
     this.api.saveArr(kind as 'radarr' | 'sonarr', a).subscribe({
-      next: () => this.snack.open(`${kind} settings saved`, 'OK', { duration: 3000 }),
+      next: () => {
+        this.setPristine(kind);
+        this.snack.open(`${kind} settings saved`, 'OK', { duration: 3000 });
+      },
       error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
     });
   }
@@ -481,7 +617,10 @@ export class SettingsPage implements OnInit {
     const ms = this.maintenanceSettings();
     if (!ms) return;
     this.api.saveMaintenanceSettings(ms).subscribe({
-      next: () => this.snack.open('Appdata paths saved', 'OK', { duration: 3000 }),
+      next: () => {
+        this.setPristine('appdata');
+        this.snack.open('Appdata paths saved', 'OK', { duration: 3000 });
+      },
       error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
     });
   }
@@ -491,7 +630,10 @@ export class SettingsPage implements OnInit {
     const a = this.ai();
     if (!a) return;
     this.api.saveAiSettings(a).subscribe({
-      next: () => this.snack.open('AI advisor settings saved', 'OK', { duration: 3000 }),
+      next: () => {
+        this.setPristine('ai');
+        this.snack.open('AI advisor settings saved', 'OK', { duration: 3000 });
+      },
       error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
     });
   }
@@ -506,7 +648,10 @@ export class SettingsPage implements OnInit {
     const sec = this.security();
     if (!sec) return;
     this.api.saveSecurity(sec).subscribe({
-      next: () => this.snack.open('Security settings saved', 'OK', { duration: 3000 }),
+      next: () => {
+        this.setPristine('security');
+        this.snack.open('Security settings saved', 'OK', { duration: 3000 });
+      },
       error: (err) => this.snack.open(`Save failed: ${this.errMsg(err)}`, 'OK', { duration: 8000 }),
     });
   }

@@ -172,6 +172,8 @@ export interface SetupStatus {
   sources: number;
   completedScans: number;
   pathMappings: number;
+  radarrConfigured: boolean;
+  sonarrConfigured: boolean;
   radarrEnabled: boolean;
   sonarrEnabled: boolean;
   dryRun: boolean;
