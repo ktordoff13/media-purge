@@ -14,9 +14,27 @@ describe('aggregatePlexHistory', () => {
 
   it('rolls episode plays up to the show and records watched episode keys', () => {
     const agg = aggregatePlexHistory([
-      { ratingKey: '101', grandparentRatingKey: '50', title: 'S1E1', type: 'episode', viewedAt: 100 },
-      { ratingKey: '102', grandparentRatingKey: '50', title: 'S1E2', type: 'episode', viewedAt: 500 },
-      { ratingKey: '101', grandparentRatingKey: '50', title: 'S1E1', type: 'episode', viewedAt: 900 },
+      {
+        ratingKey: '101',
+        grandparentRatingKey: '50',
+        title: 'S1E1',
+        type: 'episode',
+        viewedAt: 100,
+      },
+      {
+        ratingKey: '102',
+        grandparentRatingKey: '50',
+        title: 'S1E2',
+        type: 'episode',
+        viewedAt: 500,
+      },
+      {
+        ratingKey: '101',
+        grandparentRatingKey: '50',
+        title: 'S1E1',
+        type: 'episode',
+        viewedAt: 900,
+      },
     ]);
     expect(agg.byShow.get('50')).toEqual({ count: 3, last: 900 });
     expect(agg.watchedEpisodeKeys).toEqual(new Set(['101', '102']));

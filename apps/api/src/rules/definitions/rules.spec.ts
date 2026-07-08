@@ -56,7 +56,10 @@ function show(overrides: Partial<MediaItem> = {}): MediaItem {
   });
 }
 
-function ctxFor(rule: CleanupRule, params: Record<string, number> = {}): RuleContext {
+function ctxFor(
+  rule: CleanupRule,
+  params: Record<string, number> = {},
+): RuleContext {
   return {
     now: NOW,
     capabilities: { perUserHistory: true, labels: true, multiVersion: true },
@@ -84,11 +87,17 @@ describe('rule engine definitions', () => {
       expect(r.evaluate(m, ctxFor(r))?.points).toBe(40);
     });
     it('ignores unplayed items younger than the threshold', () => {
-      expect(r.evaluate(movie({ playCount: 0, addedAt: daysAgo(100) }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(movie({ playCount: 0, addedAt: daysAgo(100) }), ctxFor(r)),
+      ).toBeNull();
     });
     it('ignores items with plays and items without addedAt', () => {
-      expect(r.evaluate(movie({ playCount: 2, addedAt: daysAgo(400) }), ctxFor(r))).toBeNull();
-      expect(r.evaluate(movie({ playCount: 0, addedAt: null }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(movie({ playCount: 2, addedAt: daysAgo(400) }), ctxFor(r)),
+      ).toBeNull();
+      expect(
+        r.evaluate(movie({ playCount: 0, addedAt: null }), ctxFor(r)),
+      ).toBeNull();
     });
     it('respects a tuned threshold', () => {
       const m = movie({ playCount: 0, addedAt: daysAgo(100) });
@@ -103,7 +112,9 @@ describe('rule engine definitions', () => {
       expect(r.evaluate(m, ctxFor(r))).not.toBeNull();
     });
     it('ignores never-played items (that is never-watched territory)', () => {
-      expect(r.evaluate(movie({ playCount: 0, lastPlayedAt: null }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(movie({ playCount: 0, lastPlayedAt: null }), ctxFor(r)),
+      ).toBeNull();
     });
   });
 
@@ -114,15 +125,24 @@ describe('rule engine definitions', () => {
       expect(r.evaluate(m, ctxFor(r))).not.toBeNull();
     });
     it('ignores well-loved large files and small files', () => {
-      expect(r.evaluate(movie({ sizeBytes: 20 * GB, playCount: 5 }), ctxFor(r))).toBeNull();
-      expect(r.evaluate(movie({ sizeBytes: 2 * GB, playCount: 0, addedAt: daysAgo(10) }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(movie({ sizeBytes: 20 * GB, playCount: 5 }), ctxFor(r)),
+      ).toBeNull();
+      expect(
+        r.evaluate(
+          movie({ sizeBytes: 2 * GB, playCount: 0, addedAt: daysAgo(10) }),
+          ctxFor(r),
+        ),
+      ).toBeNull();
     });
   });
 
   describe('duplicate-versions', () => {
     const r = rule('duplicate-versions');
     it('matches items with more than one version', () => {
-      expect(r.evaluate(movie({ versionCount: 2 }), ctxFor(r))?.reason).toContain('2 copies');
+      expect(
+        r.evaluate(movie({ versionCount: 2 }), ctxFor(r))?.reason,
+      ).toContain('2 copies');
     });
     it('declares the multiVersion capability requirement', () => {
       expect(r.requires).toContain('multiVersion');
@@ -136,11 +156,21 @@ describe('rule engine definitions', () => {
       expect(r.evaluate(m, ctxFor(r))).not.toBeNull();
     });
     it('falls back to age when the item was never played', () => {
-      const m = movie({ resolution: '720', playCount: 0, lastPlayedAt: null, addedAt: daysAgo(400) });
+      const m = movie({
+        resolution: '720',
+        playCount: 0,
+        lastPlayedAt: null,
+        addedAt: daysAgo(400),
+      });
       expect(r.evaluate(m, ctxFor(r))).not.toBeNull();
     });
     it('ignores 1080p/4k copies', () => {
-      expect(r.evaluate(movie({ resolution: '4k', lastPlayedAt: daysAgo(900) }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(
+          movie({ resolution: '4k', lastPlayedAt: daysAgo(900) }),
+          ctxFor(r),
+        ),
+      ).toBeNull();
     });
   });
 
@@ -151,12 +181,30 @@ describe('rule engine definitions', () => {
       expect(r.evaluate(s, ctxFor(r))).not.toBeNull();
     });
     it('treats a show with no new episodes in 2x threshold as ended when status is unknown (Plex)', () => {
-      const s = show({ seriesStatus: null, lastPlayedAt: daysAgo(400), lastEpisodeAddedAt: daysAgo(800) });
+      const s = show({
+        seriesStatus: null,
+        lastPlayedAt: daysAgo(400),
+        lastEpisodeAddedAt: daysAgo(800),
+      });
       expect(r.evaluate(s, ctxFor(r))).not.toBeNull();
     });
     it('ignores partially watched or recently watched shows', () => {
-      expect(r.evaluate(show({ seriesStatus: 'ended', watchedEpisodeCount: 5, lastPlayedAt: daysAgo(400) }), ctxFor(r))).toBeNull();
-      expect(r.evaluate(show({ seriesStatus: 'ended', lastPlayedAt: daysAgo(30) }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(
+          show({
+            seriesStatus: 'ended',
+            watchedEpisodeCount: 5,
+            lastPlayedAt: daysAgo(400),
+          }),
+          ctxFor(r),
+        ),
+      ).toBeNull();
+      expect(
+        r.evaluate(
+          show({ seriesStatus: 'ended', lastPlayedAt: daysAgo(30) }),
+          ctxFor(r),
+        ),
+      ).toBeNull();
     });
   });
 
@@ -167,24 +215,56 @@ describe('rule engine definitions', () => {
       expect(r.evaluate(m, ctxFor(r))?.reason).toContain('4.2');
     });
     it('falls back to critic rating and ignores unrated items', () => {
-      expect(r.evaluate(movie({ playCount: 0, ratingAudience: null, ratingCritic: 3 }), ctxFor(r))).not.toBeNull();
-      expect(r.evaluate(movie({ playCount: 0, ratingAudience: null, ratingCritic: null }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(
+          movie({ playCount: 0, ratingAudience: null, ratingCritic: 3 }),
+          ctxFor(r),
+        ),
+      ).not.toBeNull();
+      expect(
+        r.evaluate(
+          movie({ playCount: 0, ratingAudience: null, ratingCritic: null }),
+          ctxFor(r),
+        ),
+      ).toBeNull();
     });
   });
 
   describe('stale-growing-series', () => {
     const r = rule('stale-growing-series');
     it('matches a still-growing show nobody watches', () => {
-      const s = show({ lastPlayedAt: daysAgo(400), lastEpisodeAddedAt: daysAgo(5), watchedEpisodeCount: 3 });
+      const s = show({
+        lastPlayedAt: daysAgo(400),
+        lastEpisodeAddedAt: daysAgo(5),
+        watchedEpisodeCount: 3,
+      });
       expect(r.evaluate(s, ctxFor(r))).not.toBeNull();
     });
     it('uses addedAt when the show was never played at all', () => {
-      const s = show({ playCount: 0, lastPlayedAt: null, addedAt: daysAgo(500), lastEpisodeAddedAt: daysAgo(5) });
+      const s = show({
+        playCount: 0,
+        lastPlayedAt: null,
+        addedAt: daysAgo(500),
+        lastEpisodeAddedAt: daysAgo(5),
+      });
       expect(r.evaluate(s, ctxFor(r))).not.toBeNull();
     });
     it('ignores shows that stopped growing or are actively watched', () => {
-      expect(r.evaluate(show({ lastPlayedAt: daysAgo(400), lastEpisodeAddedAt: daysAgo(200) }), ctxFor(r))).toBeNull();
-      expect(r.evaluate(show({ lastPlayedAt: daysAgo(30), lastEpisodeAddedAt: daysAgo(5) }), ctxFor(r))).toBeNull();
+      expect(
+        r.evaluate(
+          show({
+            lastPlayedAt: daysAgo(400),
+            lastEpisodeAddedAt: daysAgo(200),
+          }),
+          ctxFor(r),
+        ),
+      ).toBeNull();
+      expect(
+        r.evaluate(
+          show({ lastPlayedAt: daysAgo(30), lastEpisodeAddedAt: daysAgo(5) }),
+          ctxFor(r),
+        ),
+      ).toBeNull();
     });
   });
 });

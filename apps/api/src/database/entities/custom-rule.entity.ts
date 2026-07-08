@@ -1,4 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 
 export type CustomRuleMatch = 'all' | 'any';
 export type CustomRuleAppliesTo = 'movie' | 'show' | 'both';

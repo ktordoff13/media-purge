@@ -23,10 +23,14 @@ export async function getJson<T>(
   try {
     res = await fetch(url, { headers, signal: AbortSignal.timeout(timeoutMs) });
   } catch (err) {
-    throw new Error(`Request to ${redactUrl(url)} failed: ${(err as Error).message}`);
+    throw new Error(
+      `Request to ${redactUrl(url)} failed: ${(err as Error).message}`,
+    );
   }
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${res.statusText} from ${redactUrl(url)}`);
+    throw new Error(
+      `HTTP ${res.status} ${res.statusText} from ${redactUrl(url)}`,
+    );
   }
   return (await res.json()) as T;
 }
@@ -47,17 +51,23 @@ export async function sendJson<T>(
       signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
-    throw new Error(`Request to ${redactUrl(url)} failed: ${(err as Error).message}`);
+    throw new Error(
+      `Request to ${redactUrl(url)} failed: ${(err as Error).message}`,
+    );
   }
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status} ${res.statusText} from ${redactUrl(url)}`);
+    throw new Error(
+      `HTTP ${res.status} ${res.statusText} from ${redactUrl(url)}`,
+    );
   }
   const text = await res.text();
   return text ? (JSON.parse(text) as T) : null;
 }
 
 /** Map a video pixel height to the app's coarse resolution buckets. */
-export function resolutionFromHeight(height: number | null | undefined): string | null {
+export function resolutionFromHeight(
+  height: number | null | undefined,
+): string | null {
   if (!height) return null;
   if (height >= 1600) return '4k';
   if (height >= 1000) return '1080';
@@ -65,7 +75,10 @@ export function resolutionFromHeight(height: number | null | undefined): string 
   return 'sd';
 }
 
-export function bestResolution(a: string | null, b: string | null): string | null {
+export function bestResolution(
+  a: string | null,
+  b: string | null,
+): string | null {
   const order = ['sd', '720', '1080', '4k'];
   if (!a) return b;
   if (!b) return a;

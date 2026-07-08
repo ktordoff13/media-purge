@@ -8,7 +8,11 @@ import { ProtectedItem } from '../database/entities/protected-item.entity';
 import { Recommendation } from '../database/entities/recommendation.entity';
 import { ProviderRegistry } from '../providers/provider-registry.service';
 import { RemoteMediaItem } from '../providers/media-server-provider.interface';
-import { RulesService, KEEP_LABEL, MIN_RECOMMENDATION_SCORE } from '../rules/rules.service';
+import {
+  RulesService,
+  KEEP_LABEL,
+  MIN_RECOMMENDATION_SCORE,
+} from '../rules/rules.service';
 import { ActivityService } from '../activity/activity.service';
 import { AiAdvisorService } from '../ai/ai-advisor.service';
 import { gb } from '../rules/rule.interface';
@@ -21,9 +25,12 @@ export class ScanService {
   constructor(
     @InjectRepository(Scan) private readonly scans: Repository<Scan>,
     @InjectRepository(MediaItem) private readonly items: Repository<MediaItem>,
-    @InjectRepository(MediaSource) private readonly sources: Repository<MediaSource>,
-    @InjectRepository(Recommendation) private readonly recommendations: Repository<Recommendation>,
-    @InjectRepository(ProtectedItem) private readonly protectedItems: Repository<ProtectedItem>,
+    @InjectRepository(MediaSource)
+    private readonly sources: Repository<MediaSource>,
+    @InjectRepository(Recommendation)
+    private readonly recommendations: Repository<Recommendation>,
+    @InjectRepository(ProtectedItem)
+    private readonly protectedItems: Repository<ProtectedItem>,
     private readonly registry: ProviderRegistry,
     private readonly rules: RulesService,
     private readonly activity: ActivityService,
@@ -52,7 +59,10 @@ export class ScanService {
           error: err.message,
           finishedAt: new Date(),
         });
-        await this.activity.log('scan.failed', `Scan #${scan.id} failed: ${err.message}`);
+        await this.activity.log(
+          'scan.failed',
+          `Scan #${scan.id} failed: ${err.message}`,
+        );
       })
       .finally(() => (this.running = false));
     return scan;
@@ -95,15 +105,26 @@ export class ScanService {
     await this.activity.log(
       'scan.completed',
       `Scan #${scan.id} finished: ${itemCount} items, ${count} recommendations, ${gb(bytes)} reclaimable`,
-      { scanId: scan.id, itemCount, recommendationCount: count, reclaimableBytes: bytes },
+      {
+        scanId: scan.id,
+        itemCount,
+        recommendationCount: count,
+        reclaimableBytes: bytes,
+      },
     );
   }
 
-  private async generateRecommendations(scan: Scan): Promise<{ count: number; bytes: number }> {
-    const configs = new Map((await this.rules.getConfigs()).map((c) => [c.key, c]));
+  private async generateRecommendations(
+    scan: Scan,
+  ): Promise<{ count: number; bytes: number }> {
+    const configs = new Map(
+      (await this.rules.getConfigs()).map((c) => [c.key, c]),
+    );
     const customRules = await this.rules.getEnabledCustomRules();
     const protectedSet = new Set(
-      (await this.protectedItems.find()).map((p) => `${p.sourceId}:${p.providerItemId}`),
+      (await this.protectedItems.find()).map(
+        (p) => `${p.sourceId}:${p.providerItemId}`,
+      ),
     );
     // Respect earlier dismissals: an item the user rejected stays rejected
     // until they clear the dismissal or the item's stats change materially.
@@ -119,7 +140,9 @@ export class ScanService {
     );
 
     const items = await this.items.findBy({ scanId: scan.id });
-    const sourceRows = await this.sources.findBy({ id: In([...new Set(items.map((i) => i.sourceId))]) });
+    const sourceRows = await this.sources.findBy({
+      id: In([...new Set(items.map((i) => i.sourceId))]),
+    });
     const capsBySource = new Map(
       sourceRows.map((s) => [s.id, this.registry.get(s.type).capabilities]),
     );
@@ -134,7 +157,13 @@ export class ScanService {
       if (item.labels.some((l) => l.toLowerCase() === KEEP_LABEL)) continue;
       const caps = capsBySource.get(item.sourceId);
       if (!caps) continue;
-      const reasons = this.rules.evaluateItem(item, caps, configs, customRules, now);
+      const reasons = this.rules.evaluateItem(
+        item,
+        caps,
+        configs,
+        customRules,
+        now,
+      );
       const totalScore = reasons.reduce((sum, r) => sum + r.points, 0);
       if (totalScore < MIN_RECOMMENDATION_SCORE) continue;
       toSave.push(
@@ -162,7 +191,11 @@ export class ScanService {
     return { count, bytes };
   }
 
-  private toEntity(r: RemoteMediaItem, scanId: number, sourceId: number): MediaItem {
+  private toEntity(
+    r: RemoteMediaItem,
+    scanId: number,
+    sourceId: number,
+  ): MediaItem {
     return this.items.create({
       scanId,
       sourceId,

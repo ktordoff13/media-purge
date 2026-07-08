@@ -14,9 +14,19 @@ import { StatsController } from './stats.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Recommendation, MediaItem, ProtectedItem, Scan, MediaSource]),
+    TypeOrmModule.forFeature([
+      Recommendation,
+      MediaItem,
+      ProtectedItem,
+      Scan,
+      MediaSource,
+    ]),
     CleanupModule,
   ],
-  controllers: [RecommendationsController, ProtectedItemsController, StatsController],
+  controllers: [
+    RecommendationsController,
+    ProtectedItemsController,
+    StatsController,
+  ],
 })
 export class RecommendationsModule {}

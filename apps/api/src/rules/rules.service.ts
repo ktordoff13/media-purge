@@ -36,7 +36,13 @@ export class RulesService implements OnModuleInit {
     const existing = new Set((await this.configs.find()).map((c) => c.key));
     const missing = this.rules
       .filter((r) => !existing.has(r.key))
-      .map((r) => this.configs.create({ key: r.key, enabled: true, params: r.defaultParams }));
+      .map((r) =>
+        this.configs.create({
+          key: r.key,
+          enabled: true,
+          params: r.defaultParams,
+        }),
+      );
     if (missing.length) await this.configs.save(missing);
   }
 
@@ -54,7 +60,8 @@ export class RulesService implements OnModuleInit {
       (await this.configs.findOneBy({ key })) ??
       this.configs.create({ key, enabled: true, params: rule.defaultParams });
     if (patch.enabled !== undefined) config.enabled = patch.enabled;
-    if (patch.params) config.params = { ...rule.defaultParams, ...patch.params };
+    if (patch.params)
+      config.params = { ...rule.defaultParams, ...patch.params };
     return this.configs.save(config);
   }
 
@@ -74,10 +81,18 @@ export class RulesService implements OnModuleInit {
       const config = configs.get(rule.key);
       if (config && !config.enabled) continue;
       if (rule.requires?.some((cap) => !capabilities[cap])) continue;
-      const params = { ...rule.defaultParams, ...(config?.params ?? {}) } as Record<string, number>;
+      const params = {
+        ...rule.defaultParams,
+        ...(config?.params ?? {}),
+      } as Record<string, number>;
       const match = rule.evaluate(item, { now, capabilities, params });
       if (match) {
-        reasons.push({ ruleKey: rule.key, ruleName: rule.name, points: match.points, reason: match.reason });
+        reasons.push({
+          ruleKey: rule.key,
+          ruleName: rule.name,
+          points: match.points,
+          reason: match.reason,
+        });
       }
     }
     for (const custom of customRules) {

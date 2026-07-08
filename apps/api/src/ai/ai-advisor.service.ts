@@ -41,14 +41,16 @@ export class AiAdvisorService {
   private running = false;
 
   constructor(
-    @InjectRepository(Recommendation) private readonly recs: Repository<Recommendation>,
+    @InjectRepository(Recommendation)
+    private readonly recs: Repository<Recommendation>,
     private readonly settings: SettingsService,
     private readonly activity: ActivityService,
   ) {}
 
   async testConnection(): Promise<ConnectionTestResult> {
     const ai = await this.settings.get('ai');
-    if (!ai.baseUrl) return { ok: false, message: 'No AI server URL configured' };
+    if (!ai.baseUrl)
+      return { ok: false, message: 'No AI server URL configured' };
     try {
       const res = await getJson<{ data?: { id: string }[] }>(
         `${this.apiBase(ai.baseUrl)}/models`,
@@ -56,7 +58,9 @@ export class AiAdvisorService {
         10_000,
       );
       const models = (res.data ?? []).map((m) => m.id);
-      const hasModel = models.some((m) => m === ai.model || m.startsWith(`${ai.model}:`));
+      const hasModel = models.some(
+        (m) => m === ai.model || m.startsWith(`${ai.model}:`),
+      );
       return {
         ok: true,
         message: hasModel
@@ -70,17 +74,28 @@ export class AiAdvisorService {
   }
 
   /** Kick off an advisory pass in the background for the given scan's open recs. */
-  async advise(scanId?: number): Promise<{ started: boolean; message: string }> {
+  async advise(
+    scanId?: number,
+  ): Promise<{ started: boolean; message: string }> {
     const ai = await this.settings.get('ai');
     if (!ai.enabled) {
-      throw new BadRequestException('AI advisor is disabled — enable it in Settings → Integrations');
+      throw new BadRequestException(
+        'AI advisor is disabled — enable it in Settings → Integrations',
+      );
     }
-    if (this.running) return { started: false, message: 'An advisory pass is already running' };
+    if (this.running)
+      return { started: false, message: 'An advisory pass is already running' };
     this.running = true;
     void this.run(scanId)
-      .catch((err: Error) => this.logger.warn(`AI advisory pass failed: ${err.message}`))
+      .catch((err: Error) =>
+        this.logger.warn(`AI advisory pass failed: ${err.message}`),
+      )
       .finally(() => (this.running = false));
-    return { started: true, message: 'AI is reviewing your recommendations — notes appear as it finishes' };
+    return {
+      started: true,
+      message:
+        'AI is reviewing your recommendations — notes appear as it finishes',
+    };
   }
 
   /** Called after each scan; silently does nothing unless enabled. */
@@ -89,7 +104,9 @@ export class AiAdvisorService {
     if (!ai.enabled || this.running) return;
     this.running = true;
     void this.run(scanId)
-      .catch((err: Error) => this.logger.warn(`Post-scan AI advisory failed: ${err.message}`))
+      .catch((err: Error) =>
+        this.logger.warn(`Post-scan AI advisory failed: ${err.message}`),
+      )
       .finally(() => (this.running = false));
   }
 
@@ -111,7 +128,9 @@ export class AiAdvisorService {
       for (const advisory of advisories) {
         const rec = batch.find((r) => r.id === advisory.id);
         if (!rec) continue;
-        await this.recs.update(rec.id, { aiNote: advisory.note.slice(0, NOTE_MAX_LEN) });
+        await this.recs.update(rec.id, {
+          aiNote: advisory.note.slice(0, NOTE_MAX_LEN),
+        });
         flagged += 1;
       }
     }

@@ -48,7 +48,9 @@ export class ScanSchedulerService implements OnModuleInit {
       job.start();
       this.logger.log(`Scheduled scans enabled: ${scanCron}`);
     } catch (err) {
-      this.logger.error(`Invalid scan cron '${scanCron}': ${(err as Error).message}`);
+      this.logger.error(
+        `Invalid scan cron '${scanCron}': ${(err as Error).message}`,
+      );
       this.currentExpression = null;
     }
   }

@@ -1,4 +1,10 @@
-import { CleanupRule, daysSince, gb, RuleContext, RuleMatch } from '../rule.interface';
+import {
+  CleanupRule,
+  daysSince,
+  gb,
+  RuleContext,
+  RuleMatch,
+} from '../rule.interface';
 import { MediaItem } from '../../database/entities/media-item.entity';
 
 const neverWatched: CleanupRule = {
@@ -9,7 +15,8 @@ const neverWatched: CleanupRule = {
   defaultParams: { minAgeDays: 365, points: 40 },
   evaluate(item: MediaItem, ctx: RuleContext): RuleMatch | null {
     const age = daysSince(item.addedAt, ctx.now);
-    if (item.playCount > 0 || age == null || age < ctx.params.minAgeDays) return null;
+    if (item.playCount > 0 || age == null || age < ctx.params.minAgeDays)
+      return null;
     return {
       points: ctx.params.points,
       reason: `Never played in ${Math.floor(age)} days since it was added`,
@@ -20,7 +27,8 @@ const neverWatched: CleanupRule = {
 const watchedLongAgo: CleanupRule = {
   key: 'watched-long-ago',
   name: 'Watched long ago, never rewatched',
-  description: 'It was watched, but the last play is older than the threshold — unlikely to be rewatched.',
+  description:
+    'It was watched, but the last play is older than the threshold — unlikely to be rewatched.',
   defaultParams: { minDaysSincePlay: 730, points: 25 },
   evaluate(item, ctx) {
     if (item.playCount === 0) return null;
@@ -91,15 +99,22 @@ const endedFinishedSeries: CleanupRule = {
     'The show is over, you finished it, and nobody has returned since the threshold. (Where the server does not report ended/continuing, a show with no new episodes in twice the threshold counts as ended.)',
   defaultParams: { minIdleDays: 365, minWatchedPct: 90, points: 25 },
   evaluate(item, ctx) {
-    if (item.type !== 'show' || item.episodeCount == null || item.episodeCount === 0) return null;
-    const watchedPct = ((item.watchedEpisodeCount ?? 0) / item.episodeCount) * 100;
+    if (
+      item.type !== 'show' ||
+      item.episodeCount == null ||
+      item.episodeCount === 0
+    )
+      return null;
+    const watchedPct =
+      ((item.watchedEpisodeCount ?? 0) / item.episodeCount) * 100;
     if (watchedPct < ctx.params.minWatchedPct) return null;
     const idle = daysSince(item.lastPlayedAt, ctx.now);
     if (idle == null || idle < ctx.params.minIdleDays) return null;
     const ended =
       item.seriesStatus === 'ended' ||
       (item.seriesStatus == null &&
-        (daysSince(item.lastEpisodeAddedAt, ctx.now) ?? 0) > ctx.params.minIdleDays * 2);
+        (daysSince(item.lastEpisodeAddedAt, ctx.now) ?? 0) >
+          ctx.params.minIdleDays * 2);
     if (!ended) return null;
     return {
       points: ctx.params.points,
@@ -111,7 +126,8 @@ const endedFinishedSeries: CleanupRule = {
 const poorlyRatedUnwatched: CleanupRule = {
   key: 'poorly-rated-unwatched',
   name: 'Poorly rated, never watched',
-  description: 'Rated below the threshold and nobody ever pressed play. Cut your losses.',
+  description:
+    'Rated below the threshold and nobody ever pressed play. Cut your losses.',
   defaultParams: { maxRating: 6, points: 15 },
   evaluate(item, ctx) {
     if (item.playCount > 0) return null;
@@ -134,7 +150,8 @@ const staleGrowingSeries: CleanupRule = {
     if (item.type !== 'show') return null;
     const newEp = daysSince(item.lastEpisodeAddedAt, ctx.now);
     if (newEp == null || newEp > ctx.params.maxDaysSinceNewEpisode) return null;
-    const idle = daysSince(item.lastPlayedAt, ctx.now) ?? daysSince(item.addedAt, ctx.now);
+    const idle =
+      daysSince(item.lastPlayedAt, ctx.now) ?? daysSince(item.addedAt, ctx.now);
     if (idle == null || idle < ctx.params.minIdleDays) return null;
     return {
       points: ctx.params.points,

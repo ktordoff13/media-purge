@@ -1,4 +1,12 @@
-import { Controller, Get, NotFoundException, Param, ParseIntPipe, Post, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  ParseIntPipe,
+  Post,
+  Res,
+} from '@nestjs/common';
 import { ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -42,7 +50,8 @@ export class ScanController {
 export class ItemsController {
   constructor(
     @InjectRepository(MediaItem) private readonly items: Repository<MediaItem>,
-    @InjectRepository(MediaSource) private readonly sources: Repository<MediaSource>,
+    @InjectRepository(MediaSource)
+    private readonly sources: Repository<MediaSource>,
     private readonly registry: ProviderRegistry,
   ) {}
 
@@ -50,19 +59,24 @@ export class ItemsController {
   @Public()
   @ApiOperation({
     summary: "Proxy an item's poster image from its media server",
-    description: 'Keeps server tokens off the browser; the UI loads posters through this endpoint.',
+    description:
+      'Keeps server tokens off the browser; the UI loads posters through this endpoint.',
   })
   @ApiOkResponse({ description: 'Image bytes' })
   async poster(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const item = await this.items.findOneBy({ id });
-    if (!item?.thumbPath) throw new NotFoundException('No poster for this item');
+    if (!item?.thumbPath)
+      throw new NotFoundException('No poster for this item');
     const source = await this.sources.findOneBy({ id: item.sourceId });
     if (!source) throw new NotFoundException('Source gone');
     const url = this.registry.get(source.type).imageUrl(source, item.thumbPath);
     if (!url) throw new NotFoundException('No poster URL');
     const upstream = await fetch(url, { signal: AbortSignal.timeout(20_000) });
     if (!upstream.ok) throw new NotFoundException('Poster fetch failed');
-    res.setHeader('Content-Type', upstream.headers.get('content-type') ?? 'image/jpeg');
+    res.setHeader(
+      'Content-Type',
+      upstream.headers.get('content-type') ?? 'image/jpeg',
+    );
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send(Buffer.from(await upstream.arrayBuffer()));
   }

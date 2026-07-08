@@ -1,11 +1,19 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { Recommendation } from '../database/entities/recommendation.entity';
-import { MovedFile, RecycleBinEntry } from '../database/entities/recycle-bin-entry.entity';
+import {
+  MovedFile,
+  RecycleBinEntry,
+} from '../database/entities/recycle-bin-entry.entity';
 import { SettingsService } from '../settings/settings.service';
 import { ActivityService } from '../activity/activity.service';
 import { ArrService } from '../arr/arr.service';
@@ -16,8 +24,10 @@ export class CleanupService {
   private readonly logger = new Logger(CleanupService.name);
 
   constructor(
-    @InjectRepository(Recommendation) private readonly recs: Repository<Recommendation>,
-    @InjectRepository(RecycleBinEntry) private readonly bin: Repository<RecycleBinEntry>,
+    @InjectRepository(Recommendation)
+    private readonly recs: Repository<Recommendation>,
+    @InjectRepository(RecycleBinEntry)
+    private readonly bin: Repository<RecycleBinEntry>,
     private readonly settings: SettingsService,
     private readonly activity: ActivityService,
     private readonly arr: ArrService,
@@ -29,26 +39,40 @@ export class CleanupService {
    * is touched — the would-be actions are logged and the recommendation
    * stays open.
    */
-  async approve(recommendationId: number): Promise<{ dryRun: boolean; message: string }> {
+  async approve(
+    recommendationId: number,
+  ): Promise<{ dryRun: boolean; message: string }> {
     const rec = await this.recs.findOne({
       where: { id: recommendationId },
       relations: { mediaItem: true },
     });
-    if (!rec) throw new NotFoundException(`Recommendation ${recommendationId} not found`);
+    if (!rec)
+      throw new NotFoundException(
+        `Recommendation ${recommendationId} not found`,
+      );
     if (rec.status !== 'open') {
-      throw new BadRequestException(`Recommendation ${recommendationId} is already ${rec.status}`);
+      throw new BadRequestException(
+        `Recommendation ${recommendationId} is already ${rec.status}`,
+      );
     }
 
     const general = await this.settings.get('general');
     const mappings = await this.settings.get('pathMappings');
     const item = rec.mediaItem;
-    const localPaths = item.filePaths.map((p) => this.settings.translatePath(p, mappings));
+    const localPaths = item.filePaths.map((p) =>
+      this.settings.translatePath(p, mappings),
+    );
 
     if (general.dryRun) {
       await this.activity.log(
         'recommendation.approved',
         `[DRY RUN] Would move "${item.title}" (${gb(Number(item.sizeBytes))}, ${localPaths.length} files) to the recycle bin`,
-        { recommendationId: rec.id, title: item.title, paths: localPaths, reasons: rec.reasons },
+        {
+          recommendationId: rec.id,
+          title: item.title,
+          paths: localPaths,
+          reasons: rec.reasons,
+        },
         0,
         true,
       );
@@ -88,7 +112,9 @@ export class CleanupService {
       moved.push({ originalPath: p, binPath: target });
     }
 
-    const purgeAfter = new Date(Date.now() + general.retentionDays * 86_400_000);
+    const purgeAfter = new Date(
+      Date.now() + general.retentionDays * 86_400_000,
+    );
     const entry = await this.bin.save(
       this.bin.create({
         recommendationId: rec.id,
@@ -98,7 +124,10 @@ export class CleanupService {
         purgeAfter,
       }),
     );
-    await this.recs.update(rec.id, { status: 'approved', resolvedAt: new Date() });
+    await this.recs.update(rec.id, {
+      status: 'approved',
+      resolvedAt: new Date(),
+    });
     await this.activity.log(
       'bin.moved',
       `Moved "${item.title}" (${gb(Number(item.sizeBytes))}, ${moved.length} files) to the recycle bin — purges ${purgeAfter.toISOString().slice(0, 10)}`,
@@ -123,14 +152,26 @@ export class CleanupService {
       where: { id: recommendationId },
       relations: { mediaItem: true },
     });
-    if (!rec) throw new NotFoundException(`Recommendation ${recommendationId} not found`);
+    if (!rec)
+      throw new NotFoundException(
+        `Recommendation ${recommendationId} not found`,
+      );
     if (rec.status !== 'open') {
-      throw new BadRequestException(`Recommendation ${recommendationId} is already ${rec.status}`);
+      throw new BadRequestException(
+        `Recommendation ${recommendationId} is already ${rec.status}`,
+      );
     }
-    await this.recs.update(rec.id, { status: 'dismissed', resolvedAt: new Date() });
-    await this.activity.log('recommendation.dismissed', `Dismissed suggestion for "${rec.mediaItem.title}"`, {
-      recommendationId: rec.id,
+    await this.recs.update(rec.id, {
+      status: 'dismissed',
+      resolvedAt: new Date(),
     });
+    await this.activity.log(
+      'recommendation.dismissed',
+      `Dismissed suggestion for "${rec.mediaItem.title}"`,
+      {
+        recommendationId: rec.id,
+      },
+    );
   }
 
   async restore(binEntryId: number): Promise<void> {
@@ -140,8 +181,14 @@ export class CleanupService {
       await this.moveFile(f.binPath, f.originalPath);
     }
     await this.cleanupEmptyDir(entry);
-    await this.bin.update(entry.id, { status: 'restored', resolvedAt: new Date() });
-    await this.recs.update(entry.recommendationId, { status: 'restored', resolvedAt: new Date() });
+    await this.bin.update(entry.id, {
+      status: 'restored',
+      resolvedAt: new Date(),
+    });
+    await this.recs.update(entry.recommendationId, {
+      status: 'restored',
+      resolvedAt: new Date(),
+    });
     await this.activity.log(
       'bin.restored',
       `Restored "${entry.title}" (${entry.files.length} files) from the recycle bin`,
@@ -166,7 +213,9 @@ export class CleanupService {
       try {
         await this.purgeEntry(entry);
       } catch (err) {
-        this.logger.error(`Retention purge failed for bin entry ${entry.id}: ${(err as Error).message}`);
+        this.logger.error(
+          `Retention purge failed for bin entry ${entry.id}: ${(err as Error).message}`,
+        );
       }
     }
   }
@@ -176,8 +225,14 @@ export class CleanupService {
       await fs.rm(f.binPath, { force: true });
     }
     await this.cleanupEmptyDir(entry);
-    await this.bin.update(entry.id, { status: 'purged', resolvedAt: new Date() });
-    await this.recs.update(entry.recommendationId, { status: 'purged', resolvedAt: new Date() });
+    await this.bin.update(entry.id, {
+      status: 'purged',
+      resolvedAt: new Date(),
+    });
+    await this.recs.update(entry.recommendationId, {
+      status: 'purged',
+      resolvedAt: new Date(),
+    });
     await this.activity.log(
       'bin.purged',
       `Permanently deleted "${entry.title}" — freed ${gb(Number(entry.sizeBytes))}`,
@@ -192,9 +247,12 @@ export class CleanupService {
 
   private async mustFindBinned(id: number): Promise<RecycleBinEntry> {
     const entry = await this.bin.findOneBy({ id });
-    if (!entry) throw new NotFoundException(`Recycle bin entry ${id} not found`);
+    if (!entry)
+      throw new NotFoundException(`Recycle bin entry ${id} not found`);
     if (entry.status !== 'binned') {
-      throw new BadRequestException(`Recycle bin entry ${id} is already ${entry.status}`);
+      throw new BadRequestException(
+        `Recycle bin entry ${id} is already ${entry.status}`,
+      );
     }
     return entry;
   }

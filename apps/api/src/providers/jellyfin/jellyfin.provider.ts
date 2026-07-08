@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { MediaSource } from '../../database/entities/media-source.entity';
 import { ExternalIds } from '../../database/entities/media-item.entity';
-import { bestResolution, getJson, resolutionFromHeight } from '../../common/http.util';
+import {
+  bestResolution,
+  getJson,
+  resolutionFromHeight,
+} from '../../common/http.util';
 import {
   ConnectionTestResult,
   MediaServerProvider,
@@ -66,7 +70,8 @@ interface JfLibrary {
 }
 
 const PAGE_SIZE = 300;
-const ITEM_FIELDS = 'Path,MediaSources,DateCreated,ProviderIds,Tags,CriticRating,RecursiveItemCount';
+const ITEM_FIELDS =
+  'Path,MediaSources,DateCreated,ProviderIds,Tags,CriticRating,RecursiveItemCount';
 
 interface PlayStats {
   playCount: number;
@@ -91,8 +96,15 @@ export class JellyfinProvider implements MediaServerProvider {
     multiVersion: true,
   };
 
-  private url(source: MediaSource, path: string, params: Record<string, string> = {}): string {
-    const u = new URL(path, source.baseUrl.endsWith('/') ? source.baseUrl : source.baseUrl + '/');
+  private url(
+    source: MediaSource,
+    path: string,
+    params: Record<string, string> = {},
+  ): string {
+    const u = new URL(
+      path,
+      source.baseUrl.endsWith('/') ? source.baseUrl : source.baseUrl + '/',
+    );
     for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
     return u.toString();
   }
@@ -108,7 +120,12 @@ export class JellyfinProvider implements MediaServerProvider {
         this.headers(source),
         15_000,
       );
-      return { ok: true, message: 'Connected', serverName: info.ServerName, version: info.Version };
+      return {
+        ok: true,
+        message: 'Connected',
+        serverName: info.ServerName,
+        version: info.Version,
+      };
     } catch (err) {
       return { ok: false, message: (err as Error).message };
     }
@@ -119,33 +136,46 @@ export class JellyfinProvider implements MediaServerProvider {
       this.url(source, 'Library/MediaFolders'),
       this.headers(source),
     );
-    return res.Items.filter((l) => l.CollectionType === 'movies' || l.CollectionType === 'tvshows').map(
-      (l) => ({
-        id: l.Id,
-        name: l.Name,
-        mediaType: l.CollectionType === 'movies' ? ('movie' as const) : ('show' as const),
-      }),
-    );
+    return res.Items.filter(
+      (l) => l.CollectionType === 'movies' || l.CollectionType === 'tvshows',
+    ).map((l) => ({
+      id: l.Id,
+      name: l.Name,
+      mediaType:
+        l.CollectionType === 'movies' ? ('movie' as const) : ('show' as const),
+    }));
   }
 
-  async fetchItems(source: MediaSource, library: RemoteLibrary): Promise<RemoteMediaItem[]> {
+  async fetchItems(
+    source: MediaSource,
+    library: RemoteLibrary,
+  ): Promise<RemoteMediaItem[]> {
     return library.mediaType === 'movie'
       ? this.fetchMovies(source, library)
       : this.fetchShows(source, library);
   }
 
   imageUrl(source: MediaSource, thumbPath: string): string | null {
-    const u = new URL(thumbPath.replace(/^\//, ''), source.baseUrl.endsWith('/') ? source.baseUrl : source.baseUrl + '/');
+    const u = new URL(
+      thumbPath.replace(/^\//, ''),
+      source.baseUrl.endsWith('/') ? source.baseUrl : source.baseUrl + '/',
+    );
     u.searchParams.set('api_key', source.token);
     return u.toString();
   }
 
   private async activeUsers(source: MediaSource): Promise<JfUser[]> {
-    const users = await getJson<JfUser[]>(this.url(source, 'Users'), this.headers(source));
+    const users = await getJson<JfUser[]>(
+      this.url(source, 'Users'),
+      this.headers(source),
+    );
     return users.filter((u) => !u.Policy?.IsDisabled);
   }
 
-  private async fetchMovies(source: MediaSource, library: RemoteLibrary): Promise<RemoteMediaItem[]> {
+  private async fetchMovies(
+    source: MediaSource,
+    library: RemoteLibrary,
+  ): Promise<RemoteMediaItem[]> {
     const users = await this.activeUsers(source);
     const base = new Map<string, JfItem>();
     const stats = new Map<string, PlayStats>();
@@ -170,9 +200,14 @@ export class JellyfinProvider implements MediaServerProvider {
       let resolution: string | null = null;
       for (const ms of sources) {
         const video = (ms.MediaStreams ?? []).find((st) => st.Type === 'Video');
-        resolution = bestResolution(resolution, resolutionFromHeight(video?.Height));
+        resolution = bestResolution(
+          resolution,
+          resolutionFromHeight(video?.Height),
+        );
       }
-      const filePaths = sources.map((ms) => ms.Path).filter((p): p is string => !!p);
+      const filePaths = sources
+        .map((ms) => ms.Path)
+        .filter((p): p is string => !!p);
       return {
         providerItemId: item.Id,
         libraryId: library.id,
@@ -195,7 +230,9 @@ export class JellyfinProvider implements MediaServerProvider {
         episodeCount: null,
         watchedEpisodeCount: null,
         lastEpisodeAddedAt: null,
-        thumbPath: item.ImageTags?.Primary ? `Items/${item.Id}/Images/Primary?maxWidth=400` : null,
+        thumbPath: item.ImageTags?.Primary
+          ? `Items/${item.Id}/Images/Primary?maxWidth=400`
+          : null,
         providerData: null,
       };
     });
@@ -206,7 +243,10 @@ export class JellyfinProvider implements MediaServerProvider {
    * episode fetch for sizes/paths, and per-user episode fetches to build a
    * true cross-user union of watched episodes and play counts.
    */
-  private async fetchShows(source: MediaSource, library: RemoteLibrary): Promise<RemoteMediaItem[]> {
+  private async fetchShows(
+    source: MediaSource,
+    library: RemoteLibrary,
+  ): Promise<RemoteMediaItem[]> {
     const users = await this.activeUsers(source);
 
     const seriesBase = new Map<string, JfItem>();
@@ -218,7 +258,8 @@ export class JellyfinProvider implements MediaServerProvider {
         Recursive: 'true',
         Fields: ITEM_FIELDS,
       });
-      for (const s of series) if (!seriesBase.has(s.Id)) seriesBase.set(s.Id, s);
+      for (const s of series)
+        if (!seriesBase.has(s.Id)) seriesBase.set(s.Id, s);
       if (seriesBase.size > 0) break; // one user sees the full library; others add nothing
     }
 
@@ -241,7 +282,13 @@ export class JellyfinProvider implements MediaServerProvider {
       if (!ep.SeriesId) continue;
       let f = files.get(ep.SeriesId);
       if (!f) {
-        f = { filePaths: [], sizeBytes: 0, resolution: null, episodeCount: 0, lastEpisodeAddedAt: null };
+        f = {
+          filePaths: [],
+          sizeBytes: 0,
+          resolution: null,
+          episodeCount: 0,
+          lastEpisodeAddedAt: null,
+        };
         files.set(ep.SeriesId, f);
       }
       f.episodeCount += 1;
@@ -249,7 +296,10 @@ export class JellyfinProvider implements MediaServerProvider {
         if (ms.Path) f.filePaths.push(ms.Path);
         f.sizeBytes += ms.Size ?? 0;
         const video = (ms.MediaStreams ?? []).find((st) => st.Type === 'Video');
-        f.resolution = bestResolution(f.resolution, resolutionFromHeight(video?.Height));
+        f.resolution = bestResolution(
+          f.resolution,
+          resolutionFromHeight(video?.Height),
+        );
       }
       const added = isoToDate(ep.DateCreated);
       if (added && (!f.lastEpisodeAddedAt || added > f.lastEpisodeAddedAt)) {
@@ -293,7 +343,8 @@ export class JellyfinProvider implements MediaServerProvider {
         addedAt: isoToDate(series.DateCreated),
         lastPlayedAt: s.lastPlayedAt,
         playCount: s.playCount,
-        ratingCritic: series.CriticRating != null ? series.CriticRating / 10 : null,
+        ratingCritic:
+          series.CriticRating != null ? series.CriticRating / 10 : null,
         ratingAudience: series.CommunityRating ?? null,
         filePaths: f?.filePaths ?? [],
         sizeBytes: f?.sizeBytes ?? 0,
@@ -302,7 +353,11 @@ export class JellyfinProvider implements MediaServerProvider {
         externalIds: mapProviderIds(series.ProviderIds),
         labels: series.Tags ?? [],
         seriesStatus:
-          series.Status === 'Ended' ? 'ended' : series.Status === 'Continuing' ? 'continuing' : null,
+          series.Status === 'Ended'
+            ? 'ended'
+            : series.Status === 'Continuing'
+              ? 'continuing'
+              : null,
         episodeCount,
         watchedEpisodeCount,
         lastEpisodeAddedAt: f?.lastEpisodeAddedAt ?? null,
@@ -315,14 +370,19 @@ export class JellyfinProvider implements MediaServerProvider {
   }
 
   /** Accumulate one user's UserData into the cross-user stats for an item. */
-  private mergeStats(stats: Map<string, PlayStats>, key: string, item: JfItem): void {
+  private mergeStats(
+    stats: Map<string, PlayStats>,
+    key: string,
+    item: JfItem,
+  ): void {
     const ud = item.UserData;
     if (!ud) return;
     let s = stats.get(key);
     if (!s) stats.set(key, (s = emptyStats()));
     s.playCount += ud.PlayCount ?? 0;
     const last = isoToDate(ud.LastPlayedDate);
-    if (last && (!s.lastPlayedAt || last > s.lastPlayedAt)) s.lastPlayedAt = last;
+    if (last && (!s.lastPlayedAt || last > s.lastPlayedAt))
+      s.lastPlayedAt = last;
     s.playedByAnyone ||= !!ud.Played;
   }
 
@@ -343,7 +403,9 @@ export class JellyfinProvider implements MediaServerProvider {
       out.push(...page.Items);
       if (page.Items.length === 0 || out.length >= page.TotalRecordCount) break;
     }
-    this.logger.debug(`Fetched ${out.length} Jellyfin items (${params.IncludeItemTypes})`);
+    this.logger.debug(
+      `Fetched ${out.length} Jellyfin items (${params.IncludeItemTypes})`,
+    );
     return out;
   }
 }

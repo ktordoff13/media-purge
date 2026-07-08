@@ -1,5 +1,8 @@
 import { MediaItem } from '../database/entities/media-item.entity';
-import { CustomRule, CustomRuleCondition } from '../database/entities/custom-rule.entity';
+import {
+  CustomRule,
+  CustomRuleCondition,
+} from '../database/entities/custom-rule.entity';
 import { ProviderCapabilities } from '../providers/media-server-provider.interface';
 import { daysSince, RuleMatch } from './rule.interface';
 
@@ -27,28 +30,160 @@ export interface FieldDef {
  * does not match, so "rating < 6" can never catch an unrated item.
  */
 export const CUSTOM_RULE_FIELDS: FieldDef[] = [
-  { key: 'title', label: 'Title', type: 'string', appliesTo: 'both', description: 'Item title', get: (i) => i.title },
-  { key: 'libraryName', label: 'Library', type: 'string', appliesTo: 'both', description: 'Library the item lives in', get: (i) => i.libraryName },
-  { key: 'year', label: 'Year', type: 'number', appliesTo: 'both', description: 'Release year', get: (i) => i.year },
-  { key: 'ageDays', label: 'Age (days)', type: 'number', appliesTo: 'both', description: 'Days since the item was added to the library', get: (i, now) => intOrNull(daysSince(i.addedAt, now)) },
-  { key: 'idleDays', label: 'Idle (days)', type: 'number', appliesTo: 'both', description: 'Days since last play; falls back to days since added when never played', get: (i, now) => intOrNull(daysSince(i.lastPlayedAt, now) ?? daysSince(i.addedAt, now)) },
-  { key: 'playCount', label: 'Play count', type: 'number', appliesTo: 'both', description: 'Total plays (all users where the server supports it)', get: (i) => i.playCount },
-  { key: 'ratingAudience', label: 'Audience rating', type: 'number', appliesTo: 'both', description: '0–10; unknown never matches', get: (i) => i.ratingAudience },
-  { key: 'ratingCritic', label: 'Critic rating', type: 'number', appliesTo: 'both', description: '0–10; unknown never matches', get: (i) => i.ratingCritic },
-  { key: 'sizeGb', label: 'Size (GB)', type: 'number', appliesTo: 'both', description: 'Total size on disk in GB', get: (i) => round1(Number(i.sizeBytes) / GB) },
-  { key: 'gbPerPlay', label: 'GB per play', type: 'number', appliesTo: 'both', description: 'Size divided by plays (whole size when never played) — cost of shelf-warmers', get: (i) => round1(Number(i.sizeBytes) / GB / Math.max(i.playCount, 1)) },
-  { key: 'resolution', label: 'Resolution', type: 'enum', appliesTo: 'both', enumValues: ['sd', '720', '1080', '4k'], description: 'Best available video resolution', get: (i) => i.resolution },
-  { key: 'versionCount', label: 'Version count', type: 'number', appliesTo: 'both', requires: 'multiVersion', description: 'Distinct file versions of this item', get: (i) => i.versionCount },
-  { key: 'labels', label: 'Labels/tags', type: 'labels', appliesTo: 'both', requires: 'labels', description: 'Labels (Plex) or tags (Jellyfin) on the item', get: (i) => i.labels },
-  { key: 'seriesStatus', label: 'Series status', type: 'enum', appliesTo: 'show', enumValues: ['ended', 'continuing'], description: 'Whether the show is over (unknown on Plex)', get: (i) => i.seriesStatus },
-  { key: 'episodeCount', label: 'Episode count', type: 'number', appliesTo: 'show', description: 'Episodes on disk', get: (i) => i.episodeCount },
-  { key: 'watchedPct', label: 'Watched episodes (%)', type: 'number', appliesTo: 'show', description: 'Share of episodes watched, 0–100', get: (i) => (i.episodeCount ? Math.round(((i.watchedEpisodeCount ?? 0) / i.episodeCount) * 100) : null) },
-  { key: 'daysSinceLastEpisode', label: 'Days since new episode', type: 'number', appliesTo: 'show', description: 'Days since an episode was last added', get: (i, now) => intOrNull(daysSince(i.lastEpisodeAddedAt, now)) },
+  {
+    key: 'title',
+    label: 'Title',
+    type: 'string',
+    appliesTo: 'both',
+    description: 'Item title',
+    get: (i) => i.title,
+  },
+  {
+    key: 'libraryName',
+    label: 'Library',
+    type: 'string',
+    appliesTo: 'both',
+    description: 'Library the item lives in',
+    get: (i) => i.libraryName,
+  },
+  {
+    key: 'year',
+    label: 'Year',
+    type: 'number',
+    appliesTo: 'both',
+    description: 'Release year',
+    get: (i) => i.year,
+  },
+  {
+    key: 'ageDays',
+    label: 'Age (days)',
+    type: 'number',
+    appliesTo: 'both',
+    description: 'Days since the item was added to the library',
+    get: (i, now) => intOrNull(daysSince(i.addedAt, now)),
+  },
+  {
+    key: 'idleDays',
+    label: 'Idle (days)',
+    type: 'number',
+    appliesTo: 'both',
+    description:
+      'Days since last play; falls back to days since added when never played',
+    get: (i, now) =>
+      intOrNull(daysSince(i.lastPlayedAt, now) ?? daysSince(i.addedAt, now)),
+  },
+  {
+    key: 'playCount',
+    label: 'Play count',
+    type: 'number',
+    appliesTo: 'both',
+    description: 'Total plays (all users where the server supports it)',
+    get: (i) => i.playCount,
+  },
+  {
+    key: 'ratingAudience',
+    label: 'Audience rating',
+    type: 'number',
+    appliesTo: 'both',
+    description: '0–10; unknown never matches',
+    get: (i) => i.ratingAudience,
+  },
+  {
+    key: 'ratingCritic',
+    label: 'Critic rating',
+    type: 'number',
+    appliesTo: 'both',
+    description: '0–10; unknown never matches',
+    get: (i) => i.ratingCritic,
+  },
+  {
+    key: 'sizeGb',
+    label: 'Size (GB)',
+    type: 'number',
+    appliesTo: 'both',
+    description: 'Total size on disk in GB',
+    get: (i) => round1(Number(i.sizeBytes) / GB),
+  },
+  {
+    key: 'gbPerPlay',
+    label: 'GB per play',
+    type: 'number',
+    appliesTo: 'both',
+    description:
+      'Size divided by plays (whole size when never played) — cost of shelf-warmers',
+    get: (i) => round1(Number(i.sizeBytes) / GB / Math.max(i.playCount, 1)),
+  },
+  {
+    key: 'resolution',
+    label: 'Resolution',
+    type: 'enum',
+    appliesTo: 'both',
+    enumValues: ['sd', '720', '1080', '4k'],
+    description: 'Best available video resolution',
+    get: (i) => i.resolution,
+  },
+  {
+    key: 'versionCount',
+    label: 'Version count',
+    type: 'number',
+    appliesTo: 'both',
+    requires: 'multiVersion',
+    description: 'Distinct file versions of this item',
+    get: (i) => i.versionCount,
+  },
+  {
+    key: 'labels',
+    label: 'Labels/tags',
+    type: 'labels',
+    appliesTo: 'both',
+    requires: 'labels',
+    description: 'Labels (Plex) or tags (Jellyfin) on the item',
+    get: (i) => i.labels,
+  },
+  {
+    key: 'seriesStatus',
+    label: 'Series status',
+    type: 'enum',
+    appliesTo: 'show',
+    enumValues: ['ended', 'continuing'],
+    description: 'Whether the show is over (unknown on Plex)',
+    get: (i) => i.seriesStatus,
+  },
+  {
+    key: 'episodeCount',
+    label: 'Episode count',
+    type: 'number',
+    appliesTo: 'show',
+    description: 'Episodes on disk',
+    get: (i) => i.episodeCount,
+  },
+  {
+    key: 'watchedPct',
+    label: 'Watched episodes (%)',
+    type: 'number',
+    appliesTo: 'show',
+    description: 'Share of episodes watched, 0–100',
+    get: (i) =>
+      i.episodeCount
+        ? Math.round(((i.watchedEpisodeCount ?? 0) / i.episodeCount) * 100)
+        : null,
+  },
+  {
+    key: 'daysSinceLastEpisode',
+    label: 'Days since new episode',
+    type: 'number',
+    appliesTo: 'show',
+    description: 'Days since an episode was last added',
+    get: (i, now) => intOrNull(daysSince(i.lastEpisodeAddedAt, now)),
+  },
 ];
 
 export const FIELD_BY_KEY = new Map(CUSTOM_RULE_FIELDS.map((f) => [f.key, f]));
 
-export const OPERATORS_BY_TYPE: Record<FieldType, { key: string; label: string }[]> = {
+export const OPERATORS_BY_TYPE: Record<
+  FieldType,
+  { key: string; label: string }[]
+> = {
   number: [
     { key: 'eq', label: '=' },
     { key: 'neq', label: '≠' },
@@ -82,11 +217,17 @@ interface ConditionResult {
   summary: string;
 }
 
-function evaluateCondition(cond: CustomRuleCondition, item: MediaItem, now: Date): ConditionResult {
+function evaluateCondition(
+  cond: CustomRuleCondition,
+  item: MediaItem,
+  now: Date,
+): ConditionResult {
   const field = FIELD_BY_KEY.get(cond.field);
-  if (!field) return { matched: false, summary: `unknown field '${cond.field}'` };
+  if (!field)
+    return { matched: false, summary: `unknown field '${cond.field}'` };
   const actual = field.get(item, now);
-  if (actual == null) return { matched: false, summary: `${field.label} unknown` };
+  if (actual == null)
+    return { matched: false, summary: `${field.label} unknown` };
 
   let matched = false;
   switch (field.type) {
@@ -126,9 +267,15 @@ function evaluateCondition(cond: CustomRuleCondition, item: MediaItem, now: Date
   }
 
   const opLabel =
-    OPERATORS_BY_TYPE[field.type].find((o) => o.key === cond.operator)?.label ?? cond.operator;
-  const actualText = Array.isArray(actual) ? `[${actual.join(', ')}]` : String(actual);
-  return { matched, summary: `${field.label}: ${actualText} ${opLabel} ${cond.value}` };
+    OPERATORS_BY_TYPE[field.type].find((o) => o.key === cond.operator)?.label ??
+    cond.operator;
+  const actualText = Array.isArray(actual)
+    ? `[${actual.join(', ')}]`
+    : String(actual);
+  return {
+    matched,
+    summary: `${field.label}: ${actualText} ${opLabel} ${cond.value}`,
+  };
 }
 
 /**
@@ -152,7 +299,10 @@ export function evaluateCustomRule(
   }
 
   const results = rule.conditions.map((c) => evaluateCondition(c, item, now));
-  const matched = rule.match === 'all' ? results.every((r) => r.matched) : results.some((r) => r.matched);
+  const matched =
+    rule.match === 'all'
+      ? results.every((r) => r.matched)
+      : results.some((r) => r.matched);
   if (!matched) return null;
 
   const reason = results

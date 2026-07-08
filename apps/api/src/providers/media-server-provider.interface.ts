@@ -71,7 +71,10 @@ export interface MediaServerProvider {
 
   testConnection(source: MediaSource): Promise<ConnectionTestResult>;
   listLibraries(source: MediaSource): Promise<RemoteLibrary[]>;
-  fetchItems(source: MediaSource, library: RemoteLibrary): Promise<RemoteMediaItem[]>;
+  fetchItems(
+    source: MediaSource,
+    library: RemoteLibrary,
+  ): Promise<RemoteMediaItem[]>;
   /** Absolute URL for an item's poster image, for the API's image proxy. */
   imageUrl(source: MediaSource, thumbPath: string): string | null;
 }

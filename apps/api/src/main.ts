@@ -31,6 +31,8 @@ async function bootstrap() {
 
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);
-  new Logger('Bootstrap').log(`Media Purge API on http://localhost:${port} (docs at /api/docs)`);
+  new Logger('Bootstrap').log(
+    `Media Purge API on http://localhost:${port} (docs at /api/docs)`,
+  );
 }
 void bootstrap();

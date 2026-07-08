@@ -18,14 +18,18 @@ export class RecycleBinController {
   }
 
   @Post(':id/restore')
-  @ApiOperation({ summary: 'Restore an entry: move its files back to their original paths' })
+  @ApiOperation({
+    summary: 'Restore an entry: move its files back to their original paths',
+  })
   async restore(@Param('id', ParseIntPipe) id: number) {
     await this.cleanup.restore(id);
     return { restored: true };
   }
 
   @Post(':id/purge')
-  @ApiOperation({ summary: 'Permanently delete an entry now, without waiting for retention' })
+  @ApiOperation({
+    summary: 'Permanently delete an entry now, without waiting for retention',
+  })
   async purge(@Param('id', ParseIntPipe) id: number) {
     await this.cleanup.purge(id);
     return { purged: true };

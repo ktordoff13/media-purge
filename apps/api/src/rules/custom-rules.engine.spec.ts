@@ -65,8 +65,15 @@ describe('evaluateCustomRule', () => {
       { field: 'sizeGb', operator: 'gte', value: 15 }, // matches
     ];
     const base = { appliesTo: 'both' as const, points: 10, conditions };
-    expect(evaluateCustomRule({ ...base, match: 'all' }, item(), FULL_CAPS, NOW)).toBeNull();
-    const any = evaluateCustomRule({ ...base, match: 'any' }, item(), FULL_CAPS, NOW);
+    expect(
+      evaluateCustomRule({ ...base, match: 'all' }, item(), FULL_CAPS, NOW),
+    ).toBeNull();
+    const any = evaluateCustomRule(
+      { ...base, match: 'any' },
+      item(),
+      FULL_CAPS,
+      NOW,
+    );
     expect(any).not.toBeNull();
     expect(any?.reason).toBe('Size (GB): 20 ≥ 15'); // only the matched condition is cited
   });
@@ -79,8 +86,12 @@ describe('evaluateCustomRule', () => {
       conditions: [{ field: 'ratingCritic', operator: 'lt', value: 6 }],
     };
     // ratingCritic is null → "rating < 6" must NOT catch the unrated item
-    expect(evaluateCustomRule(rule, item({ ratingCritic: null }), FULL_CAPS, NOW)).toBeNull();
-    expect(evaluateCustomRule(rule, item({ ratingCritic: 4 }), FULL_CAPS, NOW)).not.toBeNull();
+    expect(
+      evaluateCustomRule(rule, item({ ratingCritic: null }), FULL_CAPS, NOW),
+    ).toBeNull();
+    expect(
+      evaluateCustomRule(rule, item({ ratingCritic: 4 }), FULL_CAPS, NOW),
+    ).not.toBeNull();
   });
 
   it('skips items from sources lacking a required capability', () => {
@@ -104,19 +115,40 @@ describe('evaluateCustomRule', () => {
       conditions: [{ field: 'playCount', operator: 'eq', value: 0 }],
     };
     expect(evaluateCustomRule(rule, item(), FULL_CAPS, NOW)).toBeNull();
-    expect(evaluateCustomRule(rule, item({ type: 'show' }), FULL_CAPS, NOW)).not.toBeNull();
+    expect(
+      evaluateCustomRule(rule, item({ type: 'show' }), FULL_CAPS, NOW),
+    ).not.toBeNull();
   });
 
   it('string, enum, and label operators work case-insensitively', () => {
     const it1 = item({ libraryName: 'Kids Movies', resolution: 'sd' });
-    const ok = (conditions: { field: string; operator: string; value: string | number }[]) =>
-      evaluateCustomRule({ appliesTo: 'both', match: 'all', points: 5, conditions }, it1, FULL_CAPS, NOW);
-    expect(ok([{ field: 'libraryName', operator: 'contains', value: 'kids' }])).not.toBeNull();
-    expect(ok([{ field: 'libraryName', operator: 'startsWith', value: 'Kids' }])).not.toBeNull();
-    expect(ok([{ field: 'resolution', operator: 'is', value: 'sd' }])).not.toBeNull();
-    expect(ok([{ field: 'resolution', operator: 'isNot', value: '4k' }])).not.toBeNull();
-    expect(ok([{ field: 'labels', operator: 'has', value: '4K-Upgrade' }])).not.toBeNull();
-    expect(ok([{ field: 'labels', operator: 'lacks', value: 'keep' }])).not.toBeNull();
+    const ok = (
+      conditions: { field: string; operator: string; value: string | number }[],
+    ) =>
+      evaluateCustomRule(
+        { appliesTo: 'both', match: 'all', points: 5, conditions },
+        it1,
+        FULL_CAPS,
+        NOW,
+      );
+    expect(
+      ok([{ field: 'libraryName', operator: 'contains', value: 'kids' }]),
+    ).not.toBeNull();
+    expect(
+      ok([{ field: 'libraryName', operator: 'startsWith', value: 'Kids' }]),
+    ).not.toBeNull();
+    expect(
+      ok([{ field: 'resolution', operator: 'is', value: 'sd' }]),
+    ).not.toBeNull();
+    expect(
+      ok([{ field: 'resolution', operator: 'isNot', value: '4k' }]),
+    ).not.toBeNull();
+    expect(
+      ok([{ field: 'labels', operator: 'has', value: '4K-Upgrade' }]),
+    ).not.toBeNull();
+    expect(
+      ok([{ field: 'labels', operator: 'lacks', value: 'keep' }]),
+    ).not.toBeNull();
   });
 
   it('gbPerPlay uses whole size when never played', () => {
@@ -126,13 +158,22 @@ describe('evaluateCustomRule', () => {
       points: 10,
       conditions: [{ field: 'gbPerPlay', operator: 'gte', value: 10 }],
     };
-    expect(evaluateCustomRule(rule, item({ playCount: 0 }), FULL_CAPS, NOW)).not.toBeNull();
-    expect(evaluateCustomRule(rule, item({ playCount: 4 }), FULL_CAPS, NOW)).toBeNull(); // 5 GB/play
+    expect(
+      evaluateCustomRule(rule, item({ playCount: 0 }), FULL_CAPS, NOW),
+    ).not.toBeNull();
+    expect(
+      evaluateCustomRule(rule, item({ playCount: 4 }), FULL_CAPS, NOW),
+    ).toBeNull(); // 5 GB/play
   });
 
   it('never matches with zero conditions', () => {
     expect(
-      evaluateCustomRule({ appliesTo: 'both', match: 'all', points: 99, conditions: [] }, item(), FULL_CAPS, NOW),
+      evaluateCustomRule(
+        { appliesTo: 'both', match: 'all', points: 99, conditions: [] },
+        item(),
+        FULL_CAPS,
+        NOW,
+      ),
     ).toBeNull();
   });
 });

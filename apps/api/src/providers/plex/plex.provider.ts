@@ -80,12 +80,22 @@ export class PlexProvider implements MediaServerProvider {
   };
 
   /** Per-source cache so one scan fetches the (potentially large) log once. */
-  private readonly historyCache = new Map<number, { fetchedAt: number; data: PlexHistoryAggregates }>();
+  private readonly historyCache = new Map<
+    number,
+    { fetchedAt: number; data: PlexHistoryAggregates }
+  >();
   private static readonly HISTORY_TTL_MS = 5 * 60_000;
   private static readonly HISTORY_MAX_ENTRIES = 100_000;
 
-  private url(source: MediaSource, path: string, params: Record<string, string> = {}): string {
-    const u = new URL(path, source.baseUrl.endsWith('/') ? source.baseUrl : source.baseUrl + '/');
+  private url(
+    source: MediaSource,
+    path: string,
+    params: Record<string, string> = {},
+  ): string {
+    const u = new URL(
+      path,
+      source.baseUrl.endsWith('/') ? source.baseUrl : source.baseUrl + '/',
+    );
     for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
     u.searchParams.set('X-Plex-Token', source.token);
     return u.toString();
@@ -97,7 +107,11 @@ export class PlexProvider implements MediaServerProvider {
 
   async testConnection(source: MediaSource): Promise<ConnectionTestResult> {
     try {
-      const res = await getJson<PlexContainer>(this.url(source, ''), this.headers, 15_000);
+      const res = await getJson<PlexContainer>(
+        this.url(source, ''),
+        this.headers,
+        15_000,
+      );
       return {
         ok: true,
         message: 'Connected',
@@ -110,7 +124,10 @@ export class PlexProvider implements MediaServerProvider {
   }
 
   async listLibraries(source: MediaSource): Promise<RemoteLibrary[]> {
-    const res = await getJson<PlexContainer>(this.url(source, 'library/sections'), this.headers);
+    const res = await getJson<PlexContainer>(
+      this.url(source, 'library/sections'),
+      this.headers,
+    );
     return (res.MediaContainer.Directory ?? [])
       .filter((d) => d.type === 'movie' || d.type === 'show')
       .map((d) => ({
@@ -120,7 +137,10 @@ export class PlexProvider implements MediaServerProvider {
       }));
   }
 
-  async fetchItems(source: MediaSource, library: RemoteLibrary): Promise<RemoteMediaItem[]> {
+  async fetchItems(
+    source: MediaSource,
+    library: RemoteLibrary,
+  ): Promise<RemoteMediaItem[]> {
     return library.mediaType === 'movie'
       ? this.fetchMovies(source, library)
       : this.fetchShows(source, library);
@@ -130,7 +150,10 @@ export class PlexProvider implements MediaServerProvider {
     return this.url(source, thumbPath.replace(/^\//, ''));
   }
 
-  private async fetchMovies(source: MediaSource, library: RemoteLibrary): Promise<RemoteMediaItem[]> {
+  private async fetchMovies(
+    source: MediaSource,
+    library: RemoteLibrary,
+  ): Promise<RemoteMediaItem[]> {
     const [items, history] = await Promise.all([
       this.pagedMetadata(source, `library/sections/${library.id}/all`, {
         type: '1',
@@ -142,9 +165,12 @@ export class PlexProvider implements MediaServerProvider {
   }
 
   /** Fetch + aggregate the server-wide play log (all users), cached per scan. */
-  private async playHistory(source: MediaSource): Promise<PlexHistoryAggregates> {
+  private async playHistory(
+    source: MediaSource,
+  ): Promise<PlexHistoryAggregates> {
     const cached = this.historyCache.get(source.id);
-    if (cached && Date.now() - cached.fetchedAt < PlexProvider.HISTORY_TTL_MS) return cached.data;
+    if (cached && Date.now() - cached.fetchedAt < PlexProvider.HISTORY_TTL_MS)
+      return cached.data;
     let entries: PlexMetadata[] = [];
     try {
       entries = await this.pagedMetadata(
@@ -167,13 +193,18 @@ export class PlexProvider implements MediaServerProvider {
    * Shows need two fetches: the show listing (watch counts, ratings, labels)
    * plus every episode (file paths/sizes) aggregated by grandparentRatingKey.
    */
-  private async fetchShows(source: MediaSource, library: RemoteLibrary): Promise<RemoteMediaItem[]> {
+  private async fetchShows(
+    source: MediaSource,
+    library: RemoteLibrary,
+  ): Promise<RemoteMediaItem[]> {
     const [shows, episodes, history] = await Promise.all([
       this.pagedMetadata(source, `library/sections/${library.id}/all`, {
         type: '2',
         includeGuids: '1',
       }),
-      this.pagedMetadata(source, `library/sections/${library.id}/all`, { type: '4' }),
+      this.pagedMetadata(source, `library/sections/${library.id}/all`, {
+        type: '4',
+      }),
       this.playHistory(source),
     ]);
 
@@ -196,17 +227,26 @@ export class PlexProvider implements MediaServerProvider {
       const filePaths: string[] = [];
       for (const ep of eps) {
         for (const media of ep.Media ?? []) {
-          resolution = bestResolution(resolution, normalizeResolution(media.videoResolution));
+          resolution = bestResolution(
+            resolution,
+            normalizeResolution(media.videoResolution),
+          );
           for (const part of media.Part ?? []) {
             if (part.file) filePaths.push(part.file);
             sizeBytes += part.size ?? 0;
           }
         }
         playCount += ep.viewCount ?? 0;
-        if (ep.lastViewedAt && (!lastPlayedAt || ep.lastViewedAt > lastPlayedAt)) {
+        if (
+          ep.lastViewedAt &&
+          (!lastPlayedAt || ep.lastViewedAt > lastPlayedAt)
+        ) {
           lastPlayedAt = ep.lastViewedAt;
         }
-        if (ep.addedAt && (!lastEpisodeAddedAt || ep.addedAt > lastEpisodeAddedAt)) {
+        if (
+          ep.addedAt &&
+          (!lastEpisodeAddedAt || ep.addedAt > lastEpisodeAddedAt)
+        ) {
           lastEpisodeAddedAt = ep.addedAt;
         }
       }
@@ -214,14 +254,17 @@ export class PlexProvider implements MediaServerProvider {
       const hist = history.byShow.get(show.ratingKey);
       if (hist) {
         playCount = Math.max(playCount, hist.count);
-        if (hist.last && (!lastPlayedAt || hist.last > lastPlayedAt)) lastPlayedAt = hist.last;
+        if (hist.last && (!lastPlayedAt || hist.last > lastPlayedAt))
+          lastPlayedAt = hist.last;
       }
       const episodeCount = show.leafCount ?? eps.length;
       const ownerWatched =
-        show.viewedLeafCount ?? eps.filter((e) => (e.viewCount ?? 0) > 0).length;
+        show.viewedLeafCount ??
+        eps.filter((e) => (e.viewCount ?? 0) > 0).length;
       // Union of the owner's watched episodes and any play logged for any user.
       const anyUserWatched = eps.filter(
-        (e) => (e.viewCount ?? 0) > 0 || history.watchedEpisodeKeys.has(e.ratingKey),
+        (e) =>
+          (e.viewCount ?? 0) > 0 || history.watchedEpisodeKeys.has(e.ratingKey),
       ).length;
       const watchedEpisodeCount = Math.max(ownerWatched, anyUserWatched);
 
@@ -242,7 +285,9 @@ export class PlexProvider implements MediaServerProvider {
         resolution,
         versionCount: 1,
         externalIds: mapGuids(show.Guid),
-        labels: (show.Label ?? []).map((l) => l.tag).filter((t): t is string => !!t),
+        labels: (show.Label ?? [])
+          .map((l) => l.tag)
+          .filter((t): t is string => !!t),
         // Plex does not expose ended/continuing; rules fall back to
         // lastEpisodeAddedAt to judge whether a show is still growing.
         seriesStatus: null,
@@ -264,7 +309,10 @@ export class PlexProvider implements MediaServerProvider {
     const parts = media.flatMap((md) => md.Part ?? []);
     let resolution: string | null = null;
     for (const md of media) {
-      resolution = bestResolution(resolution, normalizeResolution(md.videoResolution));
+      resolution = bestResolution(
+        resolution,
+        normalizeResolution(md.videoResolution),
+      );
     }
     const hist = history.byItem.get(m.ratingKey);
     const playCount = Math.max(m.viewCount ?? 0, hist?.count ?? 0);
@@ -337,11 +385,17 @@ export interface PlexHistoryAggregates {
 }
 
 /** Roll up /status/sessions/history/all rows (one row = one play). */
-export function aggregatePlexHistory(entries: PlexMetadata[]): PlexHistoryAggregates {
+export function aggregatePlexHistory(
+  entries: PlexMetadata[],
+): PlexHistoryAggregates {
   const byItem = new Map<string, { count: number; last: number }>();
   const byShow = new Map<string, { count: number; last: number }>();
   const watchedEpisodeKeys = new Set<string>();
-  const bump = (map: Map<string, { count: number; last: number }>, key: string, at: number) => {
+  const bump = (
+    map: Map<string, { count: number; last: number }>,
+    key: string,
+    at: number,
+  ) => {
     const entry = map.get(key) ?? { count: 0, last: 0 };
     entry.count += 1;
     if (at > entry.last) entry.last = at;

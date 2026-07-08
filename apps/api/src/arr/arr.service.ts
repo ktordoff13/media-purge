@@ -34,8 +34,15 @@ export class ArrService {
     return { 'X-Api-Key': s.apiKey, Accept: 'application/json' };
   }
 
-  private url(s: ArrSettings, path: string, params: Record<string, string> = {}): string {
-    const u = new URL(path, s.baseUrl.endsWith('/') ? s.baseUrl : s.baseUrl + '/');
+  private url(
+    s: ArrSettings,
+    path: string,
+    params: Record<string, string> = {},
+  ): string {
+    const u = new URL(
+      path,
+      s.baseUrl.endsWith('/') ? s.baseUrl : s.baseUrl + '/',
+    );
     for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
     return u.toString();
   }
@@ -48,15 +55,24 @@ export class ArrService {
     return this.testArr(await this.settings.get('sonarr'), 'Sonarr');
   }
 
-  private async testArr(s: ArrSettings, name: string): Promise<ConnectionTestResult> {
-    if (!s.baseUrl || !s.apiKey) return { ok: false, message: `${name} is not configured` };
+  private async testArr(
+    s: ArrSettings,
+    name: string,
+  ): Promise<ConnectionTestResult> {
+    if (!s.baseUrl || !s.apiKey)
+      return { ok: false, message: `${name} is not configured` };
     try {
       const status = await getJson<{ appName?: string; version?: string }>(
         this.url(s, 'api/v3/system/status'),
         this.headers(s),
         15_000,
       );
-      return { ok: true, message: 'Connected', serverName: status.appName, version: status.version };
+      return {
+        ok: true,
+        message: 'Connected',
+        serverName: status.appName,
+        version: status.version,
+      };
     } catch (err) {
       return { ok: false, message: (err as Error).message };
     }
@@ -73,7 +89,9 @@ export class ArrService {
       return await this.unmonitorSeries(item);
     } catch (err) {
       // Never block a cleanup on an *arr hiccup; surface it in the log instead.
-      this.logger.warn(`*arr unmonitor failed for "${item.title}": ${(err as Error).message}`);
+      this.logger.warn(
+        `*arr unmonitor failed for "${item.title}": ${(err as Error).message}`,
+      );
       return `WARNING: failed to unmonitor in ${item.type === 'movie' ? 'Radarr' : 'Sonarr'}: ${(err as Error).message}`;
     }
   }
@@ -91,7 +109,12 @@ export class ArrService {
     const movie = movies[0];
     if (!movie) return null;
     if (movie.monitored) {
-      await sendJson('PUT', this.url(s, `api/v3/movie/${movie.id}`), { ...movie, monitored: false }, this.headers(s));
+      await sendJson(
+        'PUT',
+        this.url(s, `api/v3/movie/${movie.id}`),
+        { ...movie, monitored: false },
+        this.headers(s),
+      );
     }
     return `Unmonitored "${movie.title}" in Radarr (prevents re-download)`;
   }
@@ -107,7 +130,12 @@ export class ArrService {
     const match = series[0];
     if (!match) return null;
     if (match.monitored) {
-      await sendJson('PUT', this.url(s, `api/v3/series/${match.id}`), { ...match, monitored: false }, this.headers(s));
+      await sendJson(
+        'PUT',
+        this.url(s, `api/v3/series/${match.id}`),
+        { ...match, monitored: false },
+        this.headers(s),
+      );
     }
     return `Unmonitored "${match.title}" in Sonarr (prevents re-download)`;
   }

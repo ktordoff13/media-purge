@@ -1,5 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsArray, IsBoolean, IsIn, IsOptional, IsString, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsIn,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 
 export class CreateSourceDto {
   @ApiProperty({ example: 'Living-room Plex' })
@@ -7,7 +14,8 @@ export class CreateSourceDto {
   name: string;
 
   @ApiProperty({
-    description: 'Provider type. See GET /api/v1/sources/provider-types for supported values.',
+    description:
+      'Provider type. See GET /api/v1/sources/provider-types for supported values.',
     example: 'plex',
     enum: ['plex', 'jellyfin'],
   })
@@ -30,7 +38,10 @@ export class CreateSourceDto {
   @IsBoolean()
   enabled?: boolean;
 
-  @ApiPropertyOptional({ description: 'Library ids to skip during scans.', type: [String] })
+  @ApiPropertyOptional({
+    description: 'Library ids to skip during scans.',
+    type: [String],
+  })
   @IsOptional()
   @IsArray()
   excludedLibraryIds?: string[];
@@ -60,7 +71,8 @@ export class ProviderTypeDto {
   displayName: string;
 
   @ApiProperty({
-    description: 'What this provider can report; rules degrade gracefully around gaps.',
+    description:
+      'What this provider can report; rules degrade gracefully around gaps.',
     example: { perUserHistory: true, labels: true, multiVersion: true },
   })
   capabilities: Record<string, boolean>;

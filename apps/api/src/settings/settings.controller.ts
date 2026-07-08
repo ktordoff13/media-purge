@@ -20,7 +20,9 @@ export class SettingsController {
   ) {}
 
   @Get('general')
-  @ApiOperation({ summary: 'Get general settings (dry-run, recycle bin, retention, schedule)' })
+  @ApiOperation({
+    summary: 'Get general settings (dry-run, recycle bin, retention, schedule)',
+  })
   @ApiOkResponse({ type: GeneralSettingsDto })
   getGeneral() {
     return this.settings.get('general');
@@ -49,7 +51,9 @@ export class SettingsController {
   @Put('path-mappings')
   @ApiOperation({ summary: 'Replace path mappings' })
   @ApiOkResponse({ type: PathMappingsDto })
-  async putPathMappings(@Body() dto: PathMappingsDto): Promise<PathMappingsDto> {
+  async putPathMappings(
+    @Body() dto: PathMappingsDto,
+  ): Promise<PathMappingsDto> {
     await this.settings.set('pathMappings', dto.mappings);
     await this.activity.log('settings.updated', 'Path mappings updated');
     return dto;
@@ -88,7 +92,9 @@ export class SettingsController {
   }
 
   @Get('maintenance')
-  @ApiOperation({ summary: 'Get maintenance settings (per-source appdata paths)' })
+  @ApiOperation({
+    summary: 'Get maintenance settings (per-source appdata paths)',
+  })
   @ApiOkResponse({ type: MaintenanceSettingsDto })
   getMaintenance() {
     return this.settings.get('maintenance');

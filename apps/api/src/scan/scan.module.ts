@@ -14,7 +14,13 @@ import { ScanController, ItemsController } from './scan.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Scan, MediaItem, MediaSource, Recommendation, ProtectedItem]),
+    TypeOrmModule.forFeature([
+      Scan,
+      MediaItem,
+      MediaSource,
+      Recommendation,
+      ProtectedItem,
+    ]),
     ProvidersModule,
     RulesModule,
     AiModule,

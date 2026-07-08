@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { ActivityLog, ActivityType } from '../database/entities/activity-log.entity';
+import {
+  ActivityLog,
+  ActivityType,
+} from '../database/entities/activity-log.entity';
 
 @Injectable()
 export class ActivityService {
@@ -17,7 +20,9 @@ export class ActivityService {
     bytesFreed = 0,
     dryRun = false,
   ): Promise<ActivityLog> {
-    return this.repo.save(this.repo.create({ type, message, details, bytesFreed, dryRun }));
+    return this.repo.save(
+      this.repo.create({ type, message, details, bytesFreed, dryRun }),
+    );
   }
 
   async find(opts: {

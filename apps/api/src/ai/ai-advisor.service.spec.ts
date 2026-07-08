@@ -2,8 +2,12 @@ import { parseAdvisories } from './ai-advisor.service';
 
 describe('parseAdvisories', () => {
   it('parses a clean JSON array', () => {
-    const out = parseAdvisories('[{"id": 3, "note": "Cult classic — future you will cry."}]');
-    expect(out).toEqual([{ id: 3, note: 'Cult classic — future you will cry.' }]);
+    const out = parseAdvisories(
+      '[{"id": 3, "note": "Cult classic — future you will cry."}]',
+    );
+    expect(out).toEqual([
+      { id: 3, note: 'Cult classic — future you will cry.' },
+    ]);
   });
 
   it('tolerates markdown fences and surrounding prose', () => {
@@ -21,9 +25,13 @@ describe('parseAdvisories', () => {
   });
 
   it('returns empty on garbage, empty arrays, and non-arrays', () => {
-    expect(parseAdvisories('I could not find anything noteworthy.')).toEqual([]);
+    expect(parseAdvisories('I could not find anything noteworthy.')).toEqual(
+      [],
+    );
     expect(parseAdvisories('[]')).toEqual([]);
-    expect(parseAdvisories('{"id": 1, "note": "object not array"}')).toEqual([]);
+    expect(parseAdvisories('{"id": 1, "note": "object not array"}')).toEqual(
+      [],
+    );
     expect(parseAdvisories('[{broken json')).toEqual([]);
   });
 });

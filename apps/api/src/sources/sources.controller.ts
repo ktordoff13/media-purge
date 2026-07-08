@@ -32,7 +32,9 @@ export class SourcesController {
   ) {}
 
   @Get('provider-types')
-  @ApiOperation({ summary: 'List supported media server types and their capabilities' })
+  @ApiOperation({
+    summary: 'List supported media server types and their capabilities',
+  })
   @ApiOkResponse({ type: [ProviderTypeDto] })
   providerTypes(): ProviderTypeDto[] {
     return this.registry.list().map((p) => ({
@@ -52,23 +54,33 @@ export class SourcesController {
   @ApiOperation({ summary: 'Add a media source (Plex or Jellyfin server)' })
   create(@Body() dto: CreateSourceDto) {
     this.registry.get(dto.type); // validates the type is registered
-    return this.repo.save(this.repo.create({ excludedLibraryIds: [], enabled: true, ...dto }));
+    return this.repo.save(
+      this.repo.create({ excludedLibraryIds: [], enabled: true, ...dto }),
+    );
   }
 
   @Post('test')
   @ApiOperation({
     summary: 'Test a connection without saving',
-    description: 'Used by the add-source form to validate URL and token before the source exists.',
+    description:
+      'Used by the add-source form to validate URL and token before the source exists.',
   })
   @ApiOkResponse({ type: ConnectionTestResultDto })
   testUnsaved(@Body() dto: CreateSourceDto): Promise<ConnectionTestResultDto> {
-    const source = this.repo.create({ excludedLibraryIds: [], enabled: true, ...dto });
+    const source = this.repo.create({
+      excludedLibraryIds: [],
+      enabled: true,
+      ...dto,
+    });
     return this.registry.get(dto.type).testConnection(source);
   }
 
   @Put(':id')
   @ApiOperation({ summary: 'Update a media source' })
-  async update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateSourceDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateSourceDto,
+  ) {
     const source = await this.mustFind(id);
     this.registry.get(dto.type);
     return this.repo.save({ ...source, ...dto });
@@ -84,15 +96,21 @@ export class SourcesController {
   @Post(':id/test')
   @ApiOperation({ summary: 'Test connectivity to a media source' })
   @ApiOkResponse({ type: ConnectionTestResultDto })
-  async test(@Param('id', ParseIntPipe) id: number): Promise<ConnectionTestResultDto> {
+  async test(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ConnectionTestResultDto> {
     const source = await this.mustFind(id);
     return this.registry.get(source.type).testConnection(source);
   }
 
   @Get(':id/libraries')
-  @ApiOperation({ summary: 'List libraries on a media source (for scan exclusions)' })
+  @ApiOperation({
+    summary: 'List libraries on a media source (for scan exclusions)',
+  })
   @ApiOkResponse({ type: [RemoteLibraryDto] })
-  async libraries(@Param('id', ParseIntPipe) id: number): Promise<RemoteLibraryDto[]> {
+  async libraries(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<RemoteLibraryDto[]> {
     const source = await this.mustFind(id);
     return this.registry.get(source.type).listLibraries(source);
   }

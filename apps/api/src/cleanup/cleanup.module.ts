@@ -7,7 +7,10 @@ import { CleanupService } from './cleanup.service';
 import { RecycleBinController } from './recycle-bin.controller';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Recommendation, RecycleBinEntry]), ArrModule],
+  imports: [
+    TypeOrmModule.forFeature([Recommendation, RecycleBinEntry]),
+    ArrModule,
+  ],
   providers: [CleanupService],
   controllers: [RecycleBinController],
   exports: [CleanupService],

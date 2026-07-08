@@ -19,10 +19,13 @@ import { MaintenanceModule } from './maintenance/maintenance.module';
 import { AiModule } from './ai/ai.module';
 import { ApiKeyGuard } from './common/api-key.guard';
 
-export const CONFIG_DIR = process.env.CONFIG_DIR ?? join(process.cwd(), 'config');
+export const CONFIG_DIR =
+  process.env.CONFIG_DIR ?? join(process.cwd(), 'config');
 
 /** Built Angular app, served in the production container. */
-const webDist = process.env.WEB_DIST ?? join(__dirname, '..', '..', 'web', 'dist', 'web', 'browser');
+const webDist =
+  process.env.WEB_DIST ??
+  join(__dirname, '..', '..', 'web', 'dist', 'web', 'browser');
 
 @Module({
   imports: [
@@ -36,7 +39,12 @@ const webDist = process.env.WEB_DIST ?? join(__dirname, '..', '..', 'web', 'dist
     }),
     ScheduleModule.forRoot(),
     ...(existsSync(webDist)
-      ? [ServeStaticModule.forRoot({ rootPath: webDist, exclude: ['/api/{*any}'] })]
+      ? [
+          ServeStaticModule.forRoot({
+            rootPath: webDist,
+            exclude: ['/api/{*any}'],
+          }),
+        ]
       : []),
     ActivityModule,
     SettingsModule,

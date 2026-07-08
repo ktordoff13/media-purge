@@ -11,16 +11,25 @@ export class SettingsService {
     private readonly repo: Repository<AppSetting>,
   ) {}
 
-  async get<K extends SettingsKey>(key: K): Promise<(typeof SETTINGS_DEFAULTS)[K]> {
+  async get<K extends SettingsKey>(
+    key: K,
+  ): Promise<(typeof SETTINGS_DEFAULTS)[K]> {
     const row = await this.repo.findOneBy({ key });
     const defaults = SETTINGS_DEFAULTS[key];
     if (row == null) return defaults;
     // Merge so newly introduced fields pick up defaults for older configs.
-    if (Array.isArray(defaults)) return row.value as (typeof SETTINGS_DEFAULTS)[K];
-    return { ...defaults, ...(row.value as object) } as (typeof SETTINGS_DEFAULTS)[K];
+    if (Array.isArray(defaults))
+      return row.value as (typeof SETTINGS_DEFAULTS)[K];
+    return {
+      ...defaults,
+      ...(row.value as object),
+    };
   }
 
-  async set<K extends SettingsKey>(key: K, value: (typeof SETTINGS_DEFAULTS)[K]): Promise<void> {
+  async set<K extends SettingsKey>(
+    key: K,
+    value: (typeof SETTINGS_DEFAULTS)[K],
+  ): Promise<void> {
     await this.repo.save({ key, value });
   }
 

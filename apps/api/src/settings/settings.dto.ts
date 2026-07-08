@@ -21,14 +21,16 @@ export class GeneralSettingsDto {
   dryRun: boolean;
 
   @ApiProperty({
-    description: 'Directory (inside this container) where deleted files are parked before purge.',
+    description:
+      'Directory (inside this container) where deleted files are parked before purge.',
     example: '/recycle-bin',
   })
   @IsString()
   recycleBinDir: string;
 
   @ApiProperty({
-    description: 'Days a recycle-bin entry is kept before the retention job purges it.',
+    description:
+      'Days a recycle-bin entry is kept before the retention job purges it.',
     example: 30,
     minimum: 1,
   })
@@ -38,7 +40,8 @@ export class GeneralSettingsDto {
   retentionDays: number;
 
   @ApiPropertyOptional({
-    description: 'Cron expression for scheduled scans (standard 5-field cron), or null to disable.',
+    description:
+      'Cron expression for scheduled scans (standard 5-field cron), or null to disable.',
     example: '0 3 * * 0',
     nullable: true,
     type: String,
@@ -74,7 +77,9 @@ export class PathMappingsDto {
 }
 
 export class ArrSettingsDto {
-  @ApiProperty({ description: 'Whether deletions should go through this service.' })
+  @ApiProperty({
+    description: 'Whether deletions should go through this service.',
+  })
   @IsBoolean()
   enabled: boolean;
 
@@ -82,7 +87,9 @@ export class ArrSettingsDto {
   @IsString()
   baseUrl: string;
 
-  @ApiProperty({ description: 'API key from Settings → General in Radarr/Sonarr.' })
+  @ApiProperty({
+    description: 'API key from Settings → General in Radarr/Sonarr.',
+  })
   @IsString()
   apiKey: string;
 }
@@ -91,7 +98,9 @@ export class MaintenanceSettingsDto {
   @ApiProperty({
     description:
       'Map of media source id → appdata directory mounted into this container. Enables filesystem cleanups (e.g. Plex PhotoTranscoder cache) for that source.',
-    example: { '1': '/plex-appdata/Library/Application Support/Plex Media Server' },
+    example: {
+      '1': '/plex-appdata/Library/Application Support/Plex Media Server',
+    },
   })
   @IsObject()
   appdataPaths: Record<string, string>;
@@ -106,20 +115,25 @@ export class AiSettingsDto {
   enabled: boolean;
 
   @ApiProperty({
-    description: 'OpenAI-compatible server, e.g. Ollama. /v1 is appended automatically.',
+    description:
+      'OpenAI-compatible server, e.g. Ollama. /v1 is appended automatically.',
     example: 'http://localhost:11434',
   })
   @IsString()
   baseUrl: string;
 
-  @ApiProperty({ description: 'Model name as the server knows it.', example: 'llama3.1' })
+  @ApiProperty({
+    description: 'Model name as the server knows it.',
+    example: 'llama3.1',
+  })
   @IsString()
   model: string;
 }
 
 export class SecuritySettingsDto {
   @ApiPropertyOptional({
-    description: 'When set, every API request must carry this value in the X-Api-Key header.',
+    description:
+      'When set, every API request must carry this value in the X-Api-Key header.',
     nullable: true,
     type: String,
   })

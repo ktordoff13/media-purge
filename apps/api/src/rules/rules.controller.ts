@@ -1,5 +1,11 @@
 import { Body, Controller, Get, Param, Put } from '@nestjs/common';
-import { ApiOkResponse, ApiOperation, ApiPropertyOptional, ApiProperty, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiPropertyOptional,
+  ApiProperty,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IsBoolean, IsObject, IsOptional } from 'class-validator';
 import { RulesService } from './rules.service';
 
@@ -10,7 +16,8 @@ class UpdateRuleDto {
   enabled?: boolean;
 
   @ApiPropertyOptional({
-    description: 'Rule parameters; unknown keys are ignored, omitted keys keep their defaults.',
+    description:
+      'Rule parameters; unknown keys are ignored, omitted keys keep their defaults.',
     example: { minAgeDays: 365, points: 40 },
   })
   @IsOptional()
@@ -31,13 +38,18 @@ class RuleDto {
   @ApiProperty({ example: { minAgeDays: 365, points: 40 } })
   defaultParams: Record<string, number>;
 
-  @ApiProperty({ description: 'Provider capabilities this rule needs.', example: ['multiVersion'] })
+  @ApiProperty({
+    description: 'Provider capabilities this rule needs.',
+    example: ['multiVersion'],
+  })
   requires: string[];
 
   @ApiProperty()
   enabled: boolean;
 
-  @ApiProperty({ description: 'Effective parameters (defaults merged with user overrides).' })
+  @ApiProperty({
+    description: 'Effective parameters (defaults merged with user overrides).',
+  })
   params: Record<string, number>;
 }
 
@@ -54,7 +66,9 @@ export class RulesController {
   })
   @ApiOkResponse({ type: [RuleDto] })
   async list(): Promise<RuleDto[]> {
-    const configs = new Map((await this.rules.getConfigs()).map((c) => [c.key, c]));
+    const configs = new Map(
+      (await this.rules.getConfigs()).map((c) => [c.key, c]),
+    );
     return this.rules.rules.map((r) => {
       const c = configs.get(r.key);
       return {
@@ -64,7 +78,10 @@ export class RulesController {
         defaultParams: r.defaultParams,
         requires: r.requires ?? [],
         enabled: c?.enabled ?? true,
-        params: { ...r.defaultParams, ...(c?.params ?? {}) } as Record<string, number>,
+        params: { ...r.defaultParams, ...(c?.params ?? {}) } as Record<
+          string,
+          number
+        >,
       };
     });
   }

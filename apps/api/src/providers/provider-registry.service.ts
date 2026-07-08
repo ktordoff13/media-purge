@@ -16,7 +16,9 @@ export class ProviderRegistry {
   get(type: string): MediaServerProvider {
     const provider = this.providers.get(type);
     if (!provider) {
-      throw new NotFoundException(`No media server provider registered for type '${type}'`);
+      throw new NotFoundException(
+        `No media server provider registered for type '${type}'`,
+      );
     }
     return provider;
   }

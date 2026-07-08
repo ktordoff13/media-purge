@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiProperty, ApiTags } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { MaintenanceService } from './maintenance.service';
@@ -27,9 +34,13 @@ export class MaintenanceController {
   @Post(':sourceId/run')
   @ApiOperation({
     summary: 'Run a maintenance operation',
-    description: 'Filesystem operations honor dry-run mode and report bytes freed.',
+    description:
+      'Filesystem operations honor dry-run mode and report bytes freed.',
   })
-  run(@Param('sourceId', ParseIntPipe) sourceId: number, @Body() dto: RunOperationDto) {
+  run(
+    @Param('sourceId', ParseIntPipe) sourceId: number,
+    @Body() dto: RunOperationDto,
+  ) {
     return this.maintenance.run(sourceId, dto.operation);
   }
 }

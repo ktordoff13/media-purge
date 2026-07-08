@@ -12,7 +12,13 @@ import { CustomRulesController } from './custom-rules.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([RuleConfig, CustomRule, MediaItem, Scan, MediaSource]),
+    TypeOrmModule.forFeature([
+      RuleConfig,
+      CustomRule,
+      MediaItem,
+      Scan,
+      MediaSource,
+    ]),
     ProvidersModule,
   ],
   providers: [RulesService],
