@@ -60,7 +60,14 @@ Open `http://<host>:8484`, add your server under **Settings → Media sources**,
 mappings** if your media server sees the share at a different path (see
 [docs/path-mapping.md](docs/path-mapping.md)), then hit **Scan now**.
 
-On unraid, use the template in [`docker/unraid-template.xml`](docker/unraid-template.xml).
+### unraid
+
+Use the template in [`docker/unraid-template.xml`](docker/unraid-template.xml): download it into
+`/boot/config/plugins/dockerMan/templates-user/` on your flash drive, then pick **media-purge**
+from the Template dropdown under Docker → Add Container.
+
+New to unraid or containers? Follow the [step-by-step setup guide](docs/beta-tester-guide.md) —
+it walks through the whole install and first scan with no assumed knowledge.
 
 ## Development
 
