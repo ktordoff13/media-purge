@@ -11,6 +11,7 @@ import {
   CustomRulePreview,
   Dashboard,
   GeneralSettings,
+  HealthInfo,
   MaintenanceOperation,
   MaintenanceSettings,
   MediaSource,
@@ -37,6 +38,10 @@ function stripId<T extends { id?: number }>(obj: T): Omit<T, 'id'> {
 @Injectable({ providedIn: 'root' })
 export class ApiService {
   private readonly http = inject(HttpClient);
+
+  health(): Observable<HealthInfo> {
+    return this.http.get<HealthInfo>(`${BASE}/health`);
+  }
 
   // Dashboard / scans
   dashboard(): Observable<Dashboard> {

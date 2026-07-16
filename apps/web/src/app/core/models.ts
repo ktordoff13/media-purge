@@ -133,6 +133,15 @@ export interface PathMapping {
   to: string;
 }
 
+export interface HealthInfo {
+  status: string;
+  uptime: number;
+  /** Image tag baked in by CI ('main', '1.2.3'), or 'dev' outside Docker. */
+  version: string;
+  /** Short git SHA of the build, or null outside Docker. */
+  build: string | null;
+}
+
 export interface ArrSettings {
   enabled: boolean;
   baseUrl: string;

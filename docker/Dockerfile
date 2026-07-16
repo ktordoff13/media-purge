@@ -22,11 +22,17 @@ LABEL org.opencontainers.image.title="Media Purge" \
       org.opencontainers.image.description="Rule-based media cleanup for Plex & Jellyfin — scan, recommend, reclaim storage safely." \
       org.opencontainers.image.source="https://github.com/ktordoff13/media-purge"
 
+# Baked in by CI so the UI can show what's actually running.
+ARG APP_VERSION=dev
+ARG BUILD_SHA=""
+
 ENV NODE_ENV=production \
     CONFIG_DIR=/config \
     RECYCLE_BIN_DIR=/recycle-bin \
     WEB_DIST=/app/web \
-    PORT=8484
+    PORT=8484 \
+    APP_VERSION=$APP_VERSION \
+    BUILD_SHA=$BUILD_SHA
 
 WORKDIR /app
 COPY --from=build /build/node_modules ./node_modules

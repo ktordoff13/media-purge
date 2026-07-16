@@ -50,6 +50,13 @@ mat-nav-list a {
   padding-right: 8px;
 }
 
+.version {
+  padding: 0 16px 12px;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-outline);
+  cursor: default;
+}
+
 .api-docs-link {
   display: flex;
   align-items: center;

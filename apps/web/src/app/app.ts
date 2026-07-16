@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ApiService } from './core/api.service';
 import { DryRunStateService } from './core/dry-run-state.service';
 import { ThemeService } from './core/theme.service';
 
@@ -19,6 +20,10 @@ import { ThemeService } from './core/theme.service';
 export class App implements OnInit {
   readonly dryRunState = inject(DryRunStateService);
   readonly theme = inject(ThemeService);
+  private readonly api = inject(ApiService);
+
+  /** e.g. "main · dc193c0" from a CI image, "dev" when running locally. */
+  readonly version = signal('');
 
   readonly themeIcons = { auto: 'brightness_auto', light: 'light_mode', dark: 'dark_mode' } as const;
   readonly themeLabels = { auto: 'System theme', light: 'Light theme', dark: 'Dark theme' } as const;
@@ -37,6 +42,9 @@ export class App implements OnInit {
   }
 
   ngOnInit(): void {
+    this.api.health().subscribe((h) => {
+      this.version.set(h.build ? `${h.version} · ${h.build}` : h.version);
+    });
     this.dryRunState.refresh();
     // Keep the banner honest even if settings change in another tab.
     setInterval(() => this.dryRunState.refresh(), 60_000);

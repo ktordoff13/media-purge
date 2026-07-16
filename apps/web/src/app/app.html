@@ -34,6 +34,9 @@
         <mat-icon>{{ themeIcons[theme.mode()] }}</mat-icon>
       </button>
     </div>
+    @if (version()) {
+      <div class="version" matTooltip="Image tag · build commit of what's running">{{ version() }}</div>
+    }
   </mat-sidenav>
   <mat-sidenav-content>
     @if (isMobile()) {
