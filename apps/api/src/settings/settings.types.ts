@@ -20,6 +20,8 @@ export interface ArrSettings {
   enabled: boolean;
   baseUrl: string;
   apiKey: string;
+  /** Delete the entry from the *arr on approval instead of just unmonitoring it. */
+  removeOnApproval: boolean;
 }
 
 export interface MaintenanceSettings {
@@ -64,8 +66,8 @@ export const SETTINGS_DEFAULTS: AllSettings = {
     scanCron: null,
   },
   pathMappings: [],
-  radarr: { enabled: false, baseUrl: '', apiKey: '' },
-  sonarr: { enabled: false, baseUrl: '', apiKey: '' },
+  radarr: { enabled: false, baseUrl: '', apiKey: '', removeOnApproval: false },
+  sonarr: { enabled: false, baseUrl: '', apiKey: '', removeOnApproval: false },
   maintenance: { appdataPaths: {} },
   security: { apiKey: null },
   ai: {

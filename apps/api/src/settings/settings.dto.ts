@@ -92,6 +92,13 @@ export class ArrSettingsDto {
   })
   @IsString()
   apiKey: string;
+
+  @ApiProperty({
+    description:
+      'Delete the entry from Radarr/Sonarr on approval instead of just unmonitoring it. Files are never touched by the *arr; you must re-add the entry manually if you restore.',
+  })
+  @IsBoolean()
+  removeOnApproval: boolean;
 }
 
 export class MaintenanceSettingsDto {

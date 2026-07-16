@@ -203,6 +203,10 @@ interface EditableSource extends Partial<MediaSource> {
                     <mat-slide-toggle [(ngModel)]="a.enabled" (ngModelChange)="markDirty(kind)">
                       Unmonitor on approve (prevents re-downloads)
                     </mat-slide-toggle>
+                    <mat-slide-toggle [(ngModel)]="a.removeOnApproval" [disabled]="!a.enabled" (ngModelChange)="markDirty(kind)"
+                      [matTooltip]="'Deletes the ' + (kind === 'radarr' ? 'Radarr' : 'Sonarr') + ' entry itself (never its files). If you restore from the recycle bin you must re-add it manually.'">
+                      Remove entry entirely instead
+                    </mat-slide-toggle>
                   </div>
                   <div class="row">
                     <mat-form-field appearance="outline" class="grow">

@@ -20,9 +20,11 @@ interface SonarrSeries {
 }
 
 /**
- * Radarr/Sonarr integration. On approval we UNMONITOR the entry (rather than
- * deleting it) so the *arr will not re-download the files this app moves to
- * the recycle bin — and the entry survives in case the user restores.
+ * Radarr/Sonarr integration. On approval we UNMONITOR the entry by default
+ * so the *arr will not re-download the files this app moves to the recycle
+ * bin — and the entry survives in case the user restores. With the opt-in
+ * removeOnApproval setting the entry is deleted from the *arr instead
+ * (never its files — those are already in this app's recycle bin).
  */
 @Injectable()
 export class ArrService {
@@ -108,6 +110,18 @@ export class ArrService {
     }
     const movie = movies[0];
     if (!movie) return null;
+    if (s.removeOnApproval) {
+      await sendJson(
+        'DELETE',
+        this.url(s, `api/v3/movie/${movie.id}`, {
+          deleteFiles: 'false',
+          addImportExclusion: 'false',
+        }),
+        undefined,
+        this.headers(s),
+      );
+      return `Removed "${movie.title}" from Radarr (re-add it manually if you restore)`;
+    }
     if (movie.monitored) {
       await sendJson(
         'PUT',
@@ -129,6 +143,15 @@ export class ArrService {
     );
     const match = series[0];
     if (!match) return null;
+    if (s.removeOnApproval) {
+      await sendJson(
+        'DELETE',
+        this.url(s, `api/v3/series/${match.id}`, { deleteFiles: 'false' }),
+        undefined,
+        this.headers(s),
+      );
+      return `Removed "${match.title}" from Sonarr (re-add it manually if you restore)`;
+    }
     if (match.monitored) {
       await sendJson(
         'PUT',

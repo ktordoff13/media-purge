@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
@@ -40,6 +41,26 @@ export class CleanupService {
    * stays open.
    */
   async approve(
+    recommendationId: number,
+  ): Promise<{ dryRun: boolean; message: string }> {
+    // The file move can take minutes across filesystems; a second approve for
+    // the same recommendation meanwhile would copy the files again.
+    if (this.approving.has(recommendationId)) {
+      throw new ConflictException(
+        `Recommendation ${recommendationId} is already being processed — the files are on their way to the recycle bin`,
+      );
+    }
+    this.approving.add(recommendationId);
+    try {
+      return await this.doApprove(recommendationId);
+    } finally {
+      this.approving.delete(recommendationId);
+    }
+  }
+
+  private readonly approving = new Set<number>();
+
+  private async doApprove(
     recommendationId: number,
   ): Promise<{ dryRun: boolean; message: string }> {
     const rec = await this.recs.findOne({

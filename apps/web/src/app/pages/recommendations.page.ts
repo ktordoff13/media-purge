@@ -7,6 +7,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -24,6 +25,7 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
     MatFormFieldModule,
     MatIconModule,
     MatProgressBarModule,
+    MatProgressSpinnerModule,
     MatSelectModule,
     MatTooltipModule,
     BytesPipe,
@@ -80,9 +82,21 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
         <div class="bulk-bar">
           <span>{{ selected().size }} selected · {{ selectedBytes() | bytes }}</span>
           <span class="spacer"></span>
-          <button matButton (click)="bulk('dismiss')"><mat-icon>close</mat-icon> Dismiss</button>
-          <button matButton="filled" (click)="bulk('approve')">
-            <mat-icon>delete_sweep</mat-icon> Approve deletion
+          <button matButton (click)="bulk('dismiss')" [disabled]="bulkActing() !== null">
+            @if (bulkActing() === 'dismiss') {
+              <mat-progress-spinner mode="indeterminate" diameter="18" />
+            } @else {
+              <mat-icon>close</mat-icon>
+            }
+            Dismiss
+          </button>
+          <button matButton="filled" (click)="bulk('approve')" [disabled]="bulkActing() !== null">
+            @if (bulkActing() === 'approve') {
+              <mat-progress-spinner mode="indeterminate" diameter="18" />
+            } @else {
+              <mat-icon>delete_sweep</mat-icon>
+            }
+            {{ bulkActing() === 'approve' ? 'Moving to recycle bin…' : 'Approve deletion' }}
           </button>
         </div>
       }
@@ -149,14 +163,18 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
                 <div class="rec-score muted" matTooltip="Aggregate rule score">score {{ rec.totalScore }}</div>
                 @if (status === 'open') {
                   <div class="rec-actions">
-                    <button matIconButton matTooltip="Protect — never suggest again" (click)="protect(rec)">
+                    <button matIconButton matTooltip="Protect — never suggest again" (click)="protect(rec)" [disabled]="acting().has(rec.id)">
                       <mat-icon>shield</mat-icon>
                     </button>
-                    <button matIconButton matTooltip="Dismiss" (click)="dismiss(rec)">
+                    <button matIconButton matTooltip="Dismiss" (click)="dismiss(rec)" [disabled]="acting().has(rec.id)">
                       <mat-icon>close</mat-icon>
                     </button>
-                    <button matIconButton matTooltip="Approve deletion" class="approve" (click)="approve(rec)">
-                      <mat-icon>delete</mat-icon>
+                    <button matIconButton matTooltip="Approve deletion" class="approve" (click)="approve(rec)" [disabled]="acting().has(rec.id)">
+                      @if (acting().has(rec.id)) {
+                        <mat-progress-spinner mode="indeterminate" diameter="20" />
+                      } @else {
+                        <mat-icon>delete</mat-icon>
+                      }
                     </button>
                   </div>
                 }
@@ -205,6 +223,9 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
     .total { font-variant-numeric: tabular-nums; }
     .bulk-bar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; margin-bottom: 12px;
       border-radius: 12px; background: color-mix(in srgb, var(--mat-sys-primary) 15%, transparent); }
+    button mat-progress-spinner { display: inline-block; vertical-align: middle;
+      --mdc-circular-progress-active-indicator-color: currentColor; }
+    .bulk-bar button mat-progress-spinner { margin-right: 8px; }
     .rec-list { display: flex; flex-direction: column; gap: 10px; }
     .rec-card { border-radius: 14px; background: var(--mat-sys-surface-container); overflow: hidden; }
     .rec-main { display: flex; align-items: center; gap: 14px; padding: 12px 16px; }
@@ -252,6 +273,9 @@ export class RecommendationsPage implements OnInit {
   readonly recs = signal<Recommendation[]>([]);
   readonly loading = signal(false);
   readonly selected = signal<Set<number>>(new Set());
+  /** Rec ids with an in-flight action — their row buttons are disabled meanwhile. */
+  readonly acting = signal<ReadonlySet<number>>(new Set());
+  readonly bulkActing = signal<'approve' | 'dismiss' | null>(null);
   readonly expanded = signal<number | null>(null);
   readonly libraries = computed(() => [...new Set(this.recs().map((r) => r.mediaItem.libraryName))].sort());
   readonly totalBytes = computed(() => this.recs().reduce((sum, r) => sum + Number(r.sizeBytes), 0));
@@ -295,34 +319,80 @@ export class RecommendationsPage implements OnInit {
   }
 
   approve(rec: Recommendation): void {
+    if (this.acting().has(rec.id)) return;
+    this.setActing(rec.id, true);
+    this.snack.open(`Moving "${rec.mediaItem.title}" to the recycle bin — large items can take a while…`, undefined, { duration: 5000 });
     this.api.approve(rec.id).subscribe({
       next: (res) => {
+        this.setActing(rec.id, false);
         this.snack.open(res.message, 'OK', { duration: 7000 });
         if (!res.dryRun) this.load();
       },
-      error: (err) => this.snack.open(err?.error?.message ?? 'Approve failed', 'OK', { duration: 8000 }),
+      error: (err) => {
+        this.setActing(rec.id, false);
+        this.snack.open(err?.error?.message ?? 'Approve failed', 'OK', { duration: 8000 });
+      },
     });
   }
 
   dismiss(rec: Recommendation): void {
-    this.api.dismiss(rec.id).subscribe(() => this.load());
+    if (this.acting().has(rec.id)) return;
+    this.setActing(rec.id, true);
+    this.api.dismiss(rec.id).subscribe({
+      next: () => {
+        this.setActing(rec.id, false);
+        this.load();
+      },
+      error: (err) => {
+        this.setActing(rec.id, false);
+        this.snack.open(err?.error?.message ?? 'Dismiss failed', 'OK', { duration: 8000 });
+      },
+    });
   }
 
   protect(rec: Recommendation): void {
-    this.api.protect(rec.id).subscribe(() => {
-      this.snack.open(`"${rec.mediaItem.title}" is now protected`, 'OK', { duration: 4000 });
-      this.load();
+    if (this.acting().has(rec.id)) return;
+    this.setActing(rec.id, true);
+    this.api.protect(rec.id).subscribe({
+      next: () => {
+        this.setActing(rec.id, false);
+        this.snack.open(`"${rec.mediaItem.title}" is now protected`, 'OK', { duration: 4000 });
+        this.load();
+      },
+      error: (err) => {
+        this.setActing(rec.id, false);
+        this.snack.open(err?.error?.message ?? 'Protect failed', 'OK', { duration: 8000 });
+      },
     });
   }
 
   bulk(action: 'approve' | 'dismiss'): void {
+    if (this.bulkActing()) return;
     const ids = [...this.selected()];
-    this.api.bulk(ids, action).subscribe(({ results }) => {
-      const failed = results.filter((r) => !r.ok);
-      const note = failed.length ? ` (${failed.length} failed: ${failed[0].message})` : '';
-      this.snack.open(`${results.length - failed.length} ${action}d${note}`, 'OK', { duration: 6000 });
-      this.load();
+    this.bulkActing.set(action);
+    if (action === 'approve') {
+      this.snack.open(`Moving ${ids.length} item(s) to the recycle bin — large items can take a while…`, undefined, { duration: 5000 });
+    }
+    this.api.bulk(ids, action).subscribe({
+      next: ({ results }) => {
+        this.bulkActing.set(null);
+        const failed = results.filter((r) => !r.ok);
+        const note = failed.length ? ` (${failed.length} failed: ${failed[0].message})` : '';
+        this.snack.open(`${results.length - failed.length} ${action}d${note}`, 'OK', { duration: 6000 });
+        this.load();
+      },
+      error: (err) => {
+        this.bulkActing.set(null);
+        this.snack.open(err?.error?.message ?? `Bulk ${action} failed`, 'OK', { duration: 8000 });
+      },
     });
+  }
+
+  private setActing(id: number, on: boolean): void {
+    const next = new Set(this.acting());
+    if (on) next.add(id);
+    else next.delete(id);
+    this.acting.set(next);
   }
 
   askAi(): void {

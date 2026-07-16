@@ -137,6 +137,7 @@ export interface ArrSettings {
   enabled: boolean;
   baseUrl: string;
   apiKey: string;
+  removeOnApproval: boolean;
 }
 
 export interface MaintenanceSettings {
