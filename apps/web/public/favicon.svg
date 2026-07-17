@@ -1,15 +1,43 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#B69DF8"/>
-      <stop offset="1" stop-color="#4CC9F0"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#4c1d95"/>
+    </linearGradient>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
   </defs>
-  <!-- dark Material surface matching the app shell -->
-  <rect x="2" y="2" width="60" height="60" rx="15" fill="#141218"/>
-  <rect x="3" y="3" width="58" height="58" rx="14" fill="none" stroke="url(#g)" stroke-width="2" opacity="0.45"/>
-  <!-- Material Icons 'movie_filter' — the app's brand icon — in the brand gradient -->
-  <g transform="translate(11 11) scale(1.75)">
-    <path fill="url(#g)" d="M18 4l2 3h-3l-2-3h-2l2 3h-3l-2-3H8l2 3H7L5 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4h-4zm-6.75 11.25L10 18l-1.25-2.75L6 14l2.75-1.25L10 10l1.25 2.75L14 14l-2.75 1.25zm5.69-3.31L16 14l-.94-2.06L13 11l2.06-.94L16 8l.94 2.06L19 11l-2.06.94z"/>
-  </g>
+
+  <!-- badge -->
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="url(#bg)"/>
+  <rect x="8" y="8" width="496" height="496" rx="104" fill="url(#sheen)"/>
+
+  <!-- handle -->
+  <rect x="216" y="106" width="80" height="40" rx="18" fill="none" stroke="#ffffff" stroke-width="22"/>
+
+  <!-- lid -->
+  <rect x="128" y="136" width="256" height="34" rx="17" fill="#ffffff"/>
+
+  <!-- can body: gentle taper, rounded bottom corners -->
+  <path fill="#ffffff" d="
+    M 152 198
+    L 178 396
+    Q 181 420 205 420
+    L 307 420
+    Q 331 420 334 396
+    L 360 198
+    Z"/>
+
+  <!-- play triangle punched out of the body -->
+  <path fill="#5b21b6" d="
+    M 226 252
+    L 226 356
+    Q 226 368 237 362
+    L 314 314
+    Q 324 308 314 300
+    L 237 246
+    Q 226 240 226 252
+    Z"/>
 </svg>

@@ -17,10 +17,9 @@
   padding: 20px 16px 12px;
 
   .brand-icon {
-    color: var(--mat-sys-primary);
-    font-size: 32px;
     width: 32px;
     height: 32px;
+    border-radius: 8px;
   }
 
   .brand-name {
@@ -114,7 +113,9 @@ mat-nav-list a {
   }
 
   .mobile-brand-icon {
-    color: var(--mat-sys-primary);
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
   }
 
   .mobile-brand-name {
