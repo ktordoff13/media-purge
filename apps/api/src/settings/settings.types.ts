@@ -48,6 +48,11 @@ export interface AiSettings {
   model: string;
 }
 
+export interface CountersSettings {
+  /** ISO date the dashboard's reclaimed counter accumulates from; null = all time. */
+  reclaimedSince: string | null;
+}
+
 export interface AllSettings {
   general: GeneralSettings;
   pathMappings: PathMapping[];
@@ -56,6 +61,7 @@ export interface AllSettings {
   maintenance: MaintenanceSettings;
   security: SecuritySettings;
   ai: AiSettings;
+  counters: CountersSettings;
 }
 
 export const SETTINGS_DEFAULTS: AllSettings = {
@@ -75,6 +81,7 @@ export const SETTINGS_DEFAULTS: AllSettings = {
     baseUrl: 'http://localhost:11434',
     model: 'llama3.1',
   },
+  counters: { reclaimedSince: null },
 };
 
 export type SettingsKey = keyof typeof SETTINGS_DEFAULTS;

@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Logger, Post } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -11,6 +11,7 @@ import { Scan } from '../database/entities/scan.entity';
 import { MediaItem } from '../database/entities/media-item.entity';
 import { MediaSource } from '../database/entities/media-source.entity';
 import { Recommendation } from '../database/entities/recommendation.entity';
+import { RecycleBinEntry } from '../database/entities/recycle-bin-entry.entity';
 import { ActivityService } from '../activity/activity.service';
 import { SettingsService } from '../settings/settings.service';
 
@@ -18,6 +19,11 @@ class LibraryStatDto {
   @ApiProperty() libraryName: string;
   @ApiProperty() itemCount: number;
   @ApiProperty() sizeBytes: number;
+  @ApiProperty({
+    description: 'Bytes flagged by open recommendations in this library.',
+  })
+  reclaimableBytes: number;
+  @ApiProperty() openRecommendations: number;
 }
 
 class SetupStatusDto {
@@ -44,8 +50,29 @@ class DashboardDto {
     description: 'Bytes reclaimable if all open recommendations were approved.',
   })
   reclaimableBytes: number;
-  @ApiProperty({ description: 'Bytes actually freed by purges since install.' })
+  @ApiProperty({
+    description:
+      'Bytes actually freed (media purges + maintenance cleanups) since the counter was last reset.',
+  })
   spaceSavedBytes: number;
+  @ApiProperty({ description: 'Portion freed by purged media.' })
+  spaceSavedMediaBytes: number;
+  @ApiProperty({
+    description: 'Portion freed by maintenance cleanups (server caches).',
+  })
+  spaceSavedMaintenanceBytes: number;
+  @ApiProperty({
+    nullable: true,
+    type: String,
+    description:
+      'ISO date the reclaimed counter accumulates from; null = all time.',
+  })
+  spaceSavedSince: string | null;
+  @ApiProperty({
+    description:
+      'Bytes sitting in the recycle bin awaiting the retention window.',
+  })
+  binPendingBytes: number;
   @ApiProperty({ type: [LibraryStatDto] }) libraries: LibraryStatDto[];
 }
 
@@ -59,9 +86,13 @@ export class StatsController {
     private readonly sources: Repository<MediaSource>,
     @InjectRepository(Recommendation)
     private readonly recs: Repository<Recommendation>,
+    @InjectRepository(RecycleBinEntry)
+    private readonly bin: Repository<RecycleBinEntry>,
     private readonly activity: ActivityService,
     private readonly settings: SettingsService,
   ) {}
+
+  private readonly logger = new Logger(StatsController.name);
 
   @Get('setup')
   @ApiOperation({
@@ -118,6 +149,25 @@ export class StatsController {
         .getRawOne<{ count: string; bytes: string }>();
       openRecommendations = Number(open?.count ?? 0);
       reclaimableBytes = Number(open?.bytes ?? 0);
+      const openByLibrary = new Map(
+        (
+          await this.recs
+            .createQueryBuilder('r')
+            .innerJoin('r.mediaItem', 'mi')
+            .select('mi.libraryName', 'libraryName')
+            .addSelect('COUNT(*)', 'count')
+            .addSelect('COALESCE(SUM(r.sizeBytes), 0)', 'bytes')
+            .where('r.scanId = :id AND r.status = :status', {
+              id: lastScan.id,
+              status: 'open',
+            })
+            .groupBy('mi.libraryName')
+            .getRawMany<{ libraryName: string; count: string; bytes: string }>()
+        ).map((row) => [
+          row.libraryName,
+          { count: Number(row.count), bytes: Number(row.bytes) },
+        ]),
+      );
       libraries = (
         await this.items
           .createQueryBuilder('i')
@@ -136,14 +186,44 @@ export class StatsController {
         libraryName: row.libraryName,
         itemCount: Number(row.itemCount),
         sizeBytes: Number(row.sizeBytes),
+        reclaimableBytes: openByLibrary.get(row.libraryName)?.bytes ?? 0,
+        openRecommendations: openByLibrary.get(row.libraryName)?.count ?? 0,
       }));
     }
+    const counters = await this.settings.get('counters');
+    const since = counters.reclaimedSince
+      ? new Date(counters.reclaimedSince)
+      : undefined;
+    const freed = await this.activity.bytesFreed(since);
+    const binPending = await this.bin
+      .createQueryBuilder('b')
+      .select('COALESCE(SUM(b.sizeBytes), 0)', 'bytes')
+      .where("b.status = 'binned'")
+      .getRawOne<{ bytes: string }>();
+
     return {
       lastScan,
       openRecommendations,
       reclaimableBytes,
-      spaceSavedBytes: await this.activity.totalBytesFreed(),
+      spaceSavedBytes: freed.total,
+      spaceSavedMediaBytes: freed.media,
+      spaceSavedMaintenanceBytes: freed.maintenance,
+      spaceSavedSince: counters.reclaimedSince,
+      binPendingBytes: Number(binPending?.bytes ?? 0),
       libraries,
     };
+  }
+
+  @Post('reclaimed/reset')
+  @ApiOperation({
+    summary: 'Reset the reclaimed-storage counter',
+    description:
+      'The dashboard counter starts accumulating from now. History in the activity log is unaffected.',
+  })
+  async resetReclaimed(): Promise<{ reclaimedSince: string }> {
+    const reclaimedSince = new Date().toISOString();
+    await this.settings.set('counters', { reclaimedSince });
+    this.logger.log('Reclaimed-storage counter reset');
+    return { reclaimedSince };
   }
 }

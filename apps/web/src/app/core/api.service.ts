@@ -51,6 +51,9 @@ export class ApiService {
   setupStatus(): Observable<SetupStatus> {
     return this.http.get<SetupStatus>(`${BASE}/stats/setup`);
   }
+  resetReclaimed(): Observable<{ reclaimedSince: string }> {
+    return this.http.post<{ reclaimedSince: string }>(`${BASE}/stats/reclaimed/reset`, {});
+  }
   startScan(): Observable<Scan> {
     return this.http.post<Scan>(`${BASE}/scans`, {});
   }

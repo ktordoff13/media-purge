@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Recommendation } from '../database/entities/recommendation.entity';
 import { MediaItem } from '../database/entities/media-item.entity';
 import { ProtectedItem } from '../database/entities/protected-item.entity';
+import { RecycleBinEntry } from '../database/entities/recycle-bin-entry.entity';
 import { Scan } from '../database/entities/scan.entity';
 import { MediaSource } from '../database/entities/media-source.entity';
 import { CleanupModule } from '../cleanup/cleanup.module';
@@ -18,6 +19,7 @@ import { StatsController } from './stats.controller';
       Recommendation,
       MediaItem,
       ProtectedItem,
+      RecycleBinEntry,
       Scan,
       MediaSource,
     ]),

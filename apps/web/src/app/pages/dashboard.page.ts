@@ -1,18 +1,18 @@
-import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { ApiService } from '../core/api.service';
 import { Dashboard, SetupStatus } from '../core/models';
 import { BytesPipe, TimeAgoPipe } from '../core/pipes';
 
 @Component({
   selector: 'app-dashboard-page',
-  imports: [MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule, RouterLink, BytesPipe, TimeAgoPipe, DatePipe],
+  imports: [MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule, RouterLink, BytesPipe, TimeAgoPipe, DatePipe, DecimalPipe],
   template: `
     <div class="page">
       <div class="header-row">
@@ -130,10 +130,32 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
             </div>
           </div>
           <div class="stat-tile good">
-            <div class="stat-label">Space saved so far</div>
+            <div class="stat-label">
+              Storage reclaimed
+              <button
+                class="stat-reset"
+                matTooltip="Reset — the counter starts again from now (activity history is kept)"
+                aria-label="Reset reclaimed counter"
+                (click)="resetReclaimed()"
+              >
+                <mat-icon>restart_alt</mat-icon>
+              </button>
+            </div>
             <div class="stat-value">{{ d.spaceSavedBytes | bytes }}</div>
-            <div class="stat-hint">purged via Media Purge</div>
+            <div class="stat-hint">
+              {{ d.spaceSavedMediaBytes | bytes }} media · {{ d.spaceSavedMaintenanceBytes | bytes }} server caches ·
+              {{ d.spaceSavedSince ? 'since ' + (d.spaceSavedSince | date: 'mediumDate') : 'all time' }}
+            </div>
           </div>
+          @if (d.binPendingBytes > 0) {
+            <div class="stat-tile">
+              <div class="stat-label">In recycle bin</div>
+              <div class="stat-value">{{ d.binPendingBytes | bytes }}</div>
+              <div class="stat-hint">
+                <a routerLink="/recycle-bin">restorable until retention lapses</a>
+              </div>
+            </div>
+          }
           <div class="stat-tile">
             <div class="stat-label">Library size</div>
             <div class="stat-value">{{ d.lastScan?.totalSizeBytes ?? 0 | bytes }}</div>
@@ -160,18 +182,40 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
 
         @if (d.libraries.length) {
           <h2 class="section-title">Storage by library</h2>
-          <div class="lib-bars">
-            @for (lib of d.libraries; track lib.libraryName) {
-              <div class="lib-row">
-                <div class="lib-name">{{ lib.libraryName }}</div>
-                <div class="lib-bar-track">
-                  <div
-                    class="lib-bar"
-                    [style.width.%]="(lib.sizeBytes / maxLibBytes()) * 100"
-                    [matTooltip]="lib.itemCount + ' items'"
-                  ></div>
+          <div class="stack-bar">
+            @for (lib of d.libraries; track lib.libraryName; let i = $index) {
+              <div
+                class="stack-seg"
+                [style.width.%]="(lib.sizeBytes / totalLibBytes()) * 100"
+                [style.background]="libColor(i)"
+                [matTooltip]="lib.libraryName + ' · ' + (lib.sizeBytes | bytes)"
+              ></div>
+            }
+          </div>
+          <div class="lib-grid">
+            @for (lib of d.libraries; track lib.libraryName; let i = $index) {
+              <div class="lib-card">
+                <div class="lib-head">
+                  <span class="lib-dot" [style.background]="libColor(i)"></span>
+                  <span class="lib-name">{{ lib.libraryName }}</span>
+                  <span class="lib-share muted">{{ (lib.sizeBytes / totalLibBytes()) * 100 | number: '1.0-0' }}%</span>
                 </div>
-                <div class="lib-size">{{ lib.sizeBytes | bytes }}</div>
+                <div class="lib-size-line">
+                  {{ lib.sizeBytes | bytes }}
+                  <span class="muted">· {{ lib.itemCount }} items</span>
+                </div>
+                @if (lib.reclaimableBytes > 0) {
+                  <div class="lib-reclaim">
+                    <div class="reclaim-track">
+                      <div class="reclaim-fill" [style.width.%]="(lib.reclaimableBytes / lib.sizeBytes) * 100"></div>
+                    </div>
+                    <a routerLink="/recommendations" class="reclaim-text">
+                      {{ lib.reclaimableBytes | bytes }} reclaimable · {{ lib.openRecommendations }} items
+                    </a>
+                  </div>
+                } @else {
+                  <div class="lib-reclaim muted none">nothing flagged for cleanup</div>
+                }
               </div>
             }
           </div>
@@ -209,17 +253,32 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
       border-top: 1px solid var(--mat-sys-outline-variant); }
     .scan-bar { margin-bottom: 16px; border-radius: 4px; }
     .stat-value-small { font: var(--mat-sys-title-large); margin-top: 10px; }
+    .stat-reset { display: inline-flex; align-items: center; justify-content: center;
+      width: 22px; height: 22px; padding: 0; margin-left: 4px; border: none; border-radius: 50%;
+      background: transparent; color: var(--mat-sys-on-surface-variant); cursor: pointer;
+      vertical-align: middle;
+      mat-icon { font-size: 16px; width: 16px; height: 16px; }
+      &:hover { background: color-mix(in srgb, var(--mat-sys-on-surface) 10%, transparent); } }
     .section-title { font: var(--mat-sys-title-medium); margin: 32px 0 12px; }
-    .lib-bars { display: flex; flex-direction: column; gap: 10px; }
-    .lib-row { display: grid; grid-template-columns: 180px 1fr 90px; align-items: center; gap: 12px; }
-    @media (max-width: 899px) {
-      .lib-row { grid-template-columns: 1fr 90px; }
-      .lib-name { grid-column: 1 / -1; margin-bottom: -6px; }
-    }
-    .lib-name { font: var(--mat-sys-body-medium); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .lib-bar-track { background: var(--mat-sys-surface-container); border-radius: 6px; height: 22px; overflow: hidden; }
-    .lib-bar { background: linear-gradient(90deg, var(--mat-sys-primary), var(--mat-sys-tertiary)); height: 100%; border-radius: 6px; min-width: 3px; }
-    .lib-size { text-align: right; font-variant-numeric: tabular-nums; color: var(--mat-sys-on-surface-variant); }
+    .stack-bar { display: flex; height: 28px; border-radius: 8px; overflow: hidden; gap: 2px;
+      background: var(--mat-sys-surface-container); }
+    .stack-seg { min-width: 6px; height: 100%; }
+    .lib-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+      gap: 12px; margin-top: 14px; }
+    .lib-card { background: var(--mat-sys-surface-container); border-radius: 14px; padding: 14px 16px; }
+    .lib-head { display: flex; align-items: center; gap: 8px; }
+    .lib-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+    .lib-name { font: var(--mat-sys-title-small); overflow: hidden; text-overflow: ellipsis;
+      white-space: nowrap; min-width: 0; }
+    .lib-share { margin-left: auto; font: var(--mat-sys-label-medium); font-variant-numeric: tabular-nums; }
+    .lib-size-line { font: var(--mat-sys-body-medium); margin: 6px 0 10px; font-variant-numeric: tabular-nums; }
+    .lib-reclaim { font: var(--mat-sys-body-small); }
+    .lib-reclaim.none { font-style: italic; }
+    .reclaim-track { background: var(--mat-sys-surface-container-highest); border-radius: 4px;
+      height: 6px; overflow: hidden; margin-bottom: 6px; }
+    .reclaim-fill { background: var(--mat-sys-primary); height: 100%; border-radius: 4px; min-width: 2px; }
+    .reclaim-text { color: var(--mat-sys-primary); text-decoration: none;
+      &:hover { text-decoration: underline; } }
     .empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 64px 0; color: var(--mat-sys-on-surface-variant); text-align: center;
       mat-icon { font-size: 44px; width: 44px; height: 44px; } }
     a { color: var(--mat-sys-primary); }
@@ -233,8 +292,16 @@ export class DashboardPage implements OnInit, OnDestroy {
   readonly setup = signal<SetupStatus | null>(null);
   readonly setupDismissed = signal(localStorage.getItem('mp.setupDismissed') === '1');
   readonly scanning = signal(false);
-  readonly maxLibBytes = signal(1);
+  readonly totalLibBytes = computed(() =>
+    Math.max(1, (this.data()?.libraries ?? []).reduce((sum, l) => sum + l.sizeBytes, 0)),
+  );
+  // Fixed hues that read well on both themes; cycles past 8 libraries.
+  private readonly libPalette = ['#8b5cf6', '#14b8a6', '#e0679b', '#e39a3b', '#5b8def', '#7bb662', '#b46bd6', '#d96b5b'];
   private pollTimer: ReturnType<typeof setInterval> | null = null;
+
+  libColor(i: number): string {
+    return this.libPalette[i % this.libPalette.length];
+  }
 
   ngOnInit(): void {
     this.refresh();
@@ -258,6 +325,20 @@ export class DashboardPage implements OnInit, OnDestroy {
     return s.radarrConfigured || s.sonarrConfigured || s.radarrEnabled || s.sonarrEnabled;
   }
 
+  resetReclaimed(): void {
+    const ok = confirm(
+      'Reset the reclaimed-storage counter? It starts counting again from now — the activity log keeps the full history.',
+    );
+    if (!ok) return;
+    this.api.resetReclaimed().subscribe({
+      next: () => {
+        this.snack.open('Reclaimed-storage counter reset', 'OK', { duration: 4000 });
+        this.refresh();
+      },
+      error: () => this.snack.open('Failed to reset the counter', 'OK', { duration: 6000 }),
+    });
+  }
+
   dismissSetup(): void {
     localStorage.setItem('mp.setupDismissed', '1');
     this.setupDismissed.set(true);
@@ -267,7 +348,6 @@ export class DashboardPage implements OnInit, OnDestroy {
     this.api.setupStatus().subscribe((s) => this.setup.set(s));
     this.api.dashboard().subscribe((d) => {
       this.data.set(d);
-      this.maxLibBytes.set(Math.max(1, ...d.libraries.map((l) => l.sizeBytes)));
       if (d.lastScan?.status === 'running') this.startPolling();
     });
   }

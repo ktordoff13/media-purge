@@ -187,6 +187,8 @@ export interface LibraryStat {
   libraryName: string;
   itemCount: number;
   sizeBytes: number;
+  reclaimableBytes: number;
+  openRecommendations: number;
 }
 
 export interface SetupStatus {
@@ -207,6 +209,10 @@ export interface Dashboard {
   openRecommendations: number;
   reclaimableBytes: number;
   spaceSavedBytes: number;
+  spaceSavedMediaBytes: number;
+  spaceSavedMaintenanceBytes: number;
+  spaceSavedSince: string | null;
+  binPendingBytes: number;
   libraries: LibraryStat[];
 }
 
