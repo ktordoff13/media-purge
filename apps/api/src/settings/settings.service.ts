@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AppSetting } from '../database/entities/app-setting.entity';
@@ -6,6 +6,8 @@ import { PathMapping, SETTINGS_DEFAULTS, SettingsKey } from './settings.types';
 
 @Injectable()
 export class SettingsService {
+  private readonly logger = new Logger(SettingsService.name);
+
   constructor(
     @InjectRepository(AppSetting)
     private readonly repo: Repository<AppSetting>,
@@ -31,6 +33,8 @@ export class SettingsService {
     value: (typeof SETTINGS_DEFAULTS)[K],
   ): Promise<void> {
     await this.repo.save({ key, value });
+    // Values may contain API keys/tokens — log only which section changed.
+    this.logger.log(`Settings section '${key}' updated`);
   }
 
   /** Longest-prefix path translation from media-server paths to local paths. */

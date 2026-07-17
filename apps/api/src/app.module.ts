@@ -3,6 +3,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { LoggerModule } from 'nestjs-pino';
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { AppController } from './app.controller';
@@ -29,6 +30,41 @@ const webDist =
 
 @Module({
   imports: [
+    // Pino logger for the whole app: LOG_LEVEL (default 'info', set 'debug'
+    // for request traces) and LOG_FORMAT=json for machine-readable output
+    // (default is pretty single-line for `docker logs`).
+    LoggerModule.forRoot({
+      pinoHttp: {
+        level: process.env.LOG_LEVEL ?? 'info',
+        transport:
+          process.env.LOG_FORMAT === 'json'
+            ? undefined
+            : {
+                target: 'pino-pretty',
+                options: {
+                  singleLine: true,
+                  translateTime: 'SYS:yyyy-mm-dd HH:MM:ss',
+                  messageFormat: '{if context}[{context}] {end}{msg}',
+                  ignore: 'pid,hostname,context,req,res,responseTime',
+                },
+              },
+        // Successful GETs (incl. the queue poll) only appear at debug level;
+        // mutations log at info, 4xx at warn, 5xx at error.
+        customProps: () => ({ context: 'HTTP' }),
+        autoLogging: {
+          ignore: (req) => req.url === '/api/v1/health',
+        },
+        customLogLevel: (req, res, err) => {
+          if (err || res.statusCode >= 500) return 'error';
+          if (res.statusCode >= 400) return 'warn';
+          return req.method === 'GET' ? 'debug' : 'info';
+        },
+        customSuccessMessage: (req, res, responseTime) =>
+          `${req.method} ${req.url} → ${res.statusCode} (${responseTime}ms)`,
+        customErrorMessage: (req, res) =>
+          `${req.method} ${req.url} → ${res.statusCode}`,
+      },
+    }),
     TypeOrmModule.forRoot({
       type: 'better-sqlite3',
       database: join(CONFIG_DIR, 'media-purge.db'),

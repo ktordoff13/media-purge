@@ -118,18 +118,32 @@ export class CleanupService {
       );
     }
 
+    if (missing.length) {
+      this.logger.warn(
+        `"${item.title}": ${missing.length}/${localPaths.length} file(s) unreachable, skipping them (first: ${missing[0]})`,
+      );
+    }
+
     const arrNote = await this.arr.unmonitor(item);
+    if (arrNote) this.logger.log(`"${item.title}": ${arrNote}`);
 
     const dir = path.join(
       general.recycleBinDir,
       `${rec.id}-${item.title.replace(/[^\w.-]+/g, '_').slice(0, 60)}`,
+    );
+    this.logger.log(
+      `"${item.title}": moving ${localPaths.length - missing.length} file(s) (${gb(Number(item.sizeBytes))}) to ${dir}`,
     );
     await fs.mkdir(dir, { recursive: true });
     const moved: MovedFile[] = [];
     for (const p of localPaths) {
       if (missing.includes(p)) continue;
       const target = await this.uniquePath(path.join(dir, path.basename(p)));
+      const started = Date.now();
       await this.moveFile(p, target);
+      this.logger.log(
+        `"${item.title}": moved ${p} (${Math.round((Date.now() - started) / 1000)}s)`,
+      );
       moved.push({ originalPath: p, binPath: target });
     }
 
@@ -197,6 +211,9 @@ export class CleanupService {
 
   async restore(binEntryId: number): Promise<void> {
     const entry = await this.mustFindBinned(binEntryId);
+    this.logger.log(
+      `Restoring "${entry.title}" (${entry.files.length} file(s)) from the recycle bin`,
+    );
     for (const f of entry.files) {
       await fs.mkdir(path.dirname(f.originalPath), { recursive: true });
       await this.moveFile(f.binPath, f.originalPath);
@@ -242,6 +259,9 @@ export class CleanupService {
   }
 
   private async purgeEntry(entry: RecycleBinEntry): Promise<void> {
+    this.logger.log(
+      `Purging "${entry.title}" permanently (${entry.files.length} file(s), ${gb(Number(entry.sizeBytes))})`,
+    );
     for (const f of entry.files) {
       await fs.rm(f.binPath, { force: true });
     }
@@ -284,6 +304,10 @@ export class CleanupService {
       await fs.rename(from, to);
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'EXDEV') throw err;
+      this.logger.warn(
+        `${from} is on a different filesystem than the recycle bin — falling back to a full copy. ` +
+          'This can take minutes for large files; keep the bin on the same share as the media to make moves instant.',
+      );
       await fs.copyFile(from, to);
       await fs.rm(from, { force: true });
     }

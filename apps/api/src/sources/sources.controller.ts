@@ -3,6 +3,7 @@ import {
   Controller,
   Delete,
   Get,
+  Logger,
   NotFoundException,
   Param,
   ParseIntPipe,
@@ -25,6 +26,8 @@ import {
 @ApiTags('sources')
 @Controller('sources')
 export class SourcesController {
+  private readonly logger = new Logger(SourcesController.name);
+
   constructor(
     @InjectRepository(MediaSource)
     private readonly repo: Repository<MediaSource>,
@@ -54,6 +57,9 @@ export class SourcesController {
   @ApiOperation({ summary: 'Add a media source (Plex or Jellyfin server)' })
   create(@Body() dto: CreateSourceDto) {
     this.registry.get(dto.type); // validates the type is registered
+    this.logger.log(
+      `Adding ${dto.type} source "${dto.name}" at ${dto.baseUrl}`,
+    );
     return this.repo.save(
       this.repo.create({ excludedLibraryIds: [], enabled: true, ...dto }),
     );
@@ -83,12 +89,16 @@ export class SourcesController {
   ) {
     const source = await this.mustFind(id);
     this.registry.get(dto.type);
+    this.logger.log(
+      `Updating source ${id} ("${source.name}") — enabled: ${dto.enabled}, url: ${dto.baseUrl}`,
+    );
     return this.repo.save({ ...source, ...dto });
   }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Remove a media source and its scan snapshots' })
   async remove(@Param('id', ParseIntPipe) id: number) {
+    this.logger.log(`Removing media source ${id}`);
     await this.repo.delete(id);
     return { deleted: true };
   }
@@ -100,7 +110,11 @@ export class SourcesController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<ConnectionTestResultDto> {
     const source = await this.mustFind(id);
-    return this.registry.get(source.type).testConnection(source);
+    const result = await this.registry.get(source.type).testConnection(source);
+    this.logger.log(
+      `Connection test for "${source.name}": ${result.ok ? 'OK' : `FAILED — ${result.message}`}`,
+    );
+    return result;
   }
 
   @Get(':id/libraries')

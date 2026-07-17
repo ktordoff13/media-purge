@@ -69,13 +69,22 @@ export class ScanService {
   }
 
   private async run(scan: Scan, enabledSources: MediaSource[]): Promise<void> {
+    const startedAt = Date.now();
     let itemCount = 0;
     let totalSizeBytes = 0;
+    this.logger.log(
+      `Scan #${scan.id}: starting over ${enabledSources.length} source(s): ${enabledSources
+        .map((s) => `${s.name} (${s.type})`)
+        .join(', ')}`,
+    );
 
     for (const source of enabledSources) {
       const provider = this.registry.get(source.type);
       const libraries = (await provider.listLibraries(source)).filter(
         (lib) => !source.excludedLibraryIds.includes(lib.id),
+      );
+      this.logger.log(
+        `Scan #${scan.id}: ${source.name} has ${libraries.length} librar${libraries.length === 1 ? 'y' : 'ies'} to scan`,
       );
       for (const library of libraries) {
         const remote = await provider.fetchItems(source, library);
@@ -92,6 +101,10 @@ export class ScanService {
     }
 
     const { count, bytes } = await this.generateRecommendations(scan);
+    this.logger.log(
+      `Scan #${scan.id}: completed in ${Math.round((Date.now() - startedAt) / 1000)}s — ` +
+        `${itemCount} items (${gb(totalSizeBytes)}), ${count} recommendations (${gb(bytes)} reclaimable)`,
+    );
 
     await this.scans.update(scan.id, {
       status: 'completed',
@@ -140,6 +153,10 @@ export class ScanService {
     );
 
     const items = await this.items.findBy({ scanId: scan.id });
+    this.logger.log(
+      `Scan #${scan.id}: evaluating rules for ${items.length} items ` +
+        `(${protectedSet.size} protected, ${dismissed.size} previously dismissed, ${customRules.length} custom rule(s))`,
+    );
     const sourceRows = await this.sources.findBy({
       id: In([...new Set(items.map((i) => i.sourceId))]),
     });

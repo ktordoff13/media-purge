@@ -2,6 +2,7 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
+  Logger,
   SetMetadata,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -20,6 +21,8 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
  */
 @Injectable()
 export class ApiKeyGuard implements CanActivate {
+  private readonly logger = new Logger(ApiKeyGuard.name);
+
   constructor(
     private readonly settings: SettingsService,
     private readonly reflector: Reflector,
@@ -35,6 +38,9 @@ export class ApiKeyGuard implements CanActivate {
     if (!apiKey) return true;
     const req = context.switchToHttp().getRequest<Request>();
     if (req.header('x-api-key') === apiKey) return true;
+    this.logger.warn(
+      `Rejected ${req.method} ${req.originalUrl} from ${req.ip}: missing or invalid X-Api-Key`,
+    );
     throw new UnauthorizedException('Missing or invalid X-Api-Key header');
   }
 }

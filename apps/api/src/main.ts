@@ -1,13 +1,15 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger as PinoLogger } from 'nestjs-pino';
 import { mkdirSync } from 'fs';
 import { AppModule, CONFIG_DIR } from './app.module';
 
 async function bootstrap() {
   mkdirSync(CONFIG_DIR, { recursive: true });
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(PinoLogger));
   app.setGlobalPrefix('api/v1');
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   app.enableCors(); // LAN tool; the Angular dev server runs on another port

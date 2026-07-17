@@ -89,6 +89,9 @@ export class PurgeJobsService implements OnModuleInit {
             }),
           ),
         );
+        this.logger.log(
+          `Enqueued ${recs.length} approval(s): ${recs.map((r) => `"${r.mediaItem.title}"`).join(', ')}`,
+        );
         if (this.draining) {
           this.total += recs.length;
         } else {
@@ -160,9 +163,16 @@ export class PurgeJobsService implements OnModuleInit {
           title: job.title,
         };
         await this.jobs.update(job.id, { status: 'processing' });
+        this.logger.log(
+          `Purge job ${job.id}: approving "${job.title}" (recommendation ${job.recommendationId})`,
+        );
+        const started = Date.now();
         try {
           const res = await this.cleanup.approve(job.recommendationId);
           if (res.dryRun) this.dryRun++;
+          this.logger.log(
+            `Purge job ${job.id}: done in ${Math.round((Date.now() - started) / 1000)}s — ${res.message}`,
+          );
           await this.jobs.update(job.id, {
             status: 'done',
             message: res.message,
@@ -182,6 +192,9 @@ export class PurgeJobsService implements OnModuleInit {
         }
         this.done++;
       }
+      this.logger.log(
+        `Purge queue drained: ${this.done - this.failed} done, ${this.failed} failed`,
+      );
     } finally {
       this.current = null;
       this.draining = false;
