@@ -5,21 +5,24 @@ import { map } from 'rxjs';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from './core/api.service';
 import { DryRunStateService } from './core/dry-run-state.service';
+import { PurgeQueueService } from './core/purge-queue.service';
 import { ThemeService } from './core/theme.service';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatListModule, MatIconModule, MatTooltipModule],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, MatSidenavModule, MatListModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
 export class App implements OnInit {
   readonly dryRunState = inject(DryRunStateService);
   readonly theme = inject(ThemeService);
+  readonly purge = inject(PurgeQueueService);
   private readonly api = inject(ApiService);
 
   /** e.g. "main · dc193c0" from a CI image, "dev" when running locally. */

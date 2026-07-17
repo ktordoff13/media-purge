@@ -49,6 +49,34 @@ mat-nav-list a {
   padding-right: 8px;
 }
 
+.purge-progress {
+  margin: 0 12px 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mat-sys-primary) 12%, transparent);
+
+  .purge-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font: var(--mat-sys-label-medium);
+    color: var(--mat-sys-primary);
+  }
+
+  .purge-title {
+    font: var(--mat-sys-body-small);
+    color: var(--mat-sys-on-surface-variant);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 2px 0 8px;
+  }
+
+  mat-progress-bar {
+    border-radius: 4px;
+  }
+}
+
 .version {
   padding: 0 16px 12px;
   font: var(--mat-sys-body-small);

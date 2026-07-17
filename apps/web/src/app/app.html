@@ -34,6 +34,19 @@
         <mat-icon>{{ themeIcons[theme.mode()] }}</mat-icon>
       </button>
     </div>
+    @if (purge.active()) {
+      <div class="purge-progress">
+        <div class="purge-label">
+          <mat-icon inline>delete_sweep</mat-icon>
+          Purging {{ purge.done() + 1 <= purge.total() ? purge.done() + 1 : purge.total() }} of {{ purge.total() }}
+        </div>
+        <div class="purge-title">{{ purge.current()?.title }}</div>
+        <mat-progress-bar
+          mode="determinate"
+          [value]="purge.total() ? (purge.done() / purge.total()) * 100 : 0"
+        />
+      </div>
+    }
     @if (version()) {
       <div class="version" matTooltip="Image tag · build commit of what's running">{{ version() }}</div>
     }

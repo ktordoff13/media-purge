@@ -1,4 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, effect, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -12,6 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ApiService } from '../core/api.service';
+import { PurgeQueueService } from '../core/purge-queue.service';
 import { Recommendation, RecommendationStatus } from '../core/models';
 import { BytesPipe, TimeAgoPipe } from '../core/pipes';
 
@@ -90,13 +91,9 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
             }
             Dismiss
           </button>
-          <button matButton="filled" (click)="bulk('approve')" [disabled]="bulkActing() !== null">
-            @if (bulkActing() === 'approve') {
-              <mat-progress-spinner mode="indeterminate" diameter="18" />
-            } @else {
-              <mat-icon>delete_sweep</mat-icon>
-            }
-            {{ bulkActing() === 'approve' ? 'Moving to recycle bin…' : 'Approve deletion' }}
+          <button matButton="filled" (click)="bulk('approve')" [disabled]="bulkActing() !== null || purge.active()">
+            <mat-icon>delete_sweep</mat-icon>
+            Approve deletion
           </button>
         </div>
       }
@@ -163,14 +160,14 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
                 <div class="rec-score muted" matTooltip="Aggregate rule score">score {{ rec.totalScore }}</div>
                 @if (status === 'open') {
                   <div class="rec-actions">
-                    <button matIconButton matTooltip="Protect — never suggest again" (click)="protect(rec)" [disabled]="acting().has(rec.id)">
+                    <button matIconButton matTooltip="Protect — never suggest again" (click)="protect(rec)" [disabled]="acting().has(rec.id) || purge.pending().has(rec.id)">
                       <mat-icon>shield</mat-icon>
                     </button>
-                    <button matIconButton matTooltip="Dismiss" (click)="dismiss(rec)" [disabled]="acting().has(rec.id)">
+                    <button matIconButton matTooltip="Dismiss" (click)="dismiss(rec)" [disabled]="acting().has(rec.id) || purge.pending().has(rec.id)">
                       <mat-icon>close</mat-icon>
                     </button>
-                    <button matIconButton matTooltip="Approve deletion" class="approve" (click)="approve(rec)" [disabled]="acting().has(rec.id)">
-                      @if (acting().has(rec.id)) {
+                    <button matIconButton matTooltip="Approve deletion" class="approve" (click)="approve(rec)" [disabled]="acting().has(rec.id) || purge.pending().has(rec.id)">
+                      @if (purge.pending().has(rec.id)) {
                         <mat-progress-spinner mode="indeterminate" diameter="20" />
                       } @else {
                         <mat-icon>delete</mat-icon>
@@ -264,7 +261,17 @@ import { BytesPipe, TimeAgoPipe } from '../core/pipes';
 })
 export class RecommendationsPage implements OnInit {
   readonly api = inject(ApiService);
+  readonly purge = inject(PurgeQueueService);
   private readonly snack = inject(MatSnackBar);
+
+  // Reload the list whenever the purge queue finishes an item, so approved
+  // rows disappear as they complete (including while a batch is running).
+  private lastCompletion = -1;
+  private readonly reloadOnCompletion = effect(() => {
+    const c = this.purge.completions();
+    if (this.lastCompletion >= 0 && c !== this.lastCompletion) this.load();
+    this.lastCompletion = c;
+  });
 
   status: RecommendationStatus = 'open';
   sort: 'score' | 'size' = 'score';
@@ -319,20 +326,7 @@ export class RecommendationsPage implements OnInit {
   }
 
   approve(rec: Recommendation): void {
-    if (this.acting().has(rec.id)) return;
-    this.setActing(rec.id, true);
-    this.snack.open(`Moving "${rec.mediaItem.title}" to the recycle bin — large items can take a while…`, undefined, { duration: 5000 });
-    this.api.approve(rec.id).subscribe({
-      next: (res) => {
-        this.setActing(rec.id, false);
-        this.snack.open(res.message, 'OK', { duration: 7000 });
-        if (!res.dryRun) this.load();
-      },
-      error: (err) => {
-        this.setActing(rec.id, false);
-        this.snack.open(err?.error?.message ?? 'Approve failed', 'OK', { duration: 8000 });
-      },
-    });
+    this.purge.enqueue([{ id: rec.id, title: rec.mediaItem.title }]);
   }
 
   dismiss(rec: Recommendation): void {
@@ -368,11 +362,18 @@ export class RecommendationsPage implements OnInit {
 
   bulk(action: 'approve' | 'dismiss'): void {
     if (this.bulkActing()) return;
+    if (action === 'approve') {
+      // Approvals go through the purge queue: one request at a time, with
+      // progress shown in the sidenav.
+      const items = this.recs()
+        .filter((r) => this.selected().has(r.id))
+        .map((r) => ({ id: r.id, title: r.mediaItem.title }));
+      this.selected.set(new Set());
+      this.purge.enqueue(items);
+      return;
+    }
     const ids = [...this.selected()];
     this.bulkActing.set(action);
-    if (action === 'approve') {
-      this.snack.open(`Moving ${ids.length} item(s) to the recycle bin — large items can take a while…`, undefined, { duration: 5000 });
-    }
     this.api.bulk(ids, action).subscribe({
       next: ({ results }) => {
         this.bulkActing.set(null);
