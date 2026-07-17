@@ -326,7 +326,7 @@ export class RecommendationsPage implements OnInit {
   }
 
   approve(rec: Recommendation): void {
-    this.purge.enqueue([{ id: rec.id, title: rec.mediaItem.title }]);
+    this.purge.enqueue([rec.id]);
   }
 
   dismiss(rec: Recommendation): void {
@@ -363,13 +363,11 @@ export class RecommendationsPage implements OnInit {
   bulk(action: 'approve' | 'dismiss'): void {
     if (this.bulkActing()) return;
     if (action === 'approve') {
-      // Approvals go through the purge queue: one request at a time, with
-      // progress shown in the sidenav.
-      const items = this.recs()
-        .filter((r) => this.selected().has(r.id))
-        .map((r) => ({ id: r.id, title: r.mediaItem.title }));
+      // Approvals run through the server-side purge queue; progress shows in
+      // the sidenav and the batch survives closing the tab.
+      const ids = [...this.selected()];
       this.selected.set(new Set());
-      this.purge.enqueue(items);
+      this.purge.enqueue(ids);
       return;
     }
     const ids = [...this.selected()];

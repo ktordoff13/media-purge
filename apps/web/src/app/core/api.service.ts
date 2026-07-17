@@ -18,6 +18,7 @@ import {
   PathMapping,
   ProtectedItem,
   ProviderType,
+  PurgeQueueState,
   Recommendation,
   RecommendationStatus,
   RecycleBinEntry,
@@ -83,6 +84,15 @@ export class ApiService {
       `${BASE}/recommendations/bulk`,
       { ids, action },
     );
+  }
+  purgeEnqueue(ids: number[]): Observable<PurgeQueueState> {
+    return this.http.post<PurgeQueueState>(`${BASE}/recommendations/queue`, { ids });
+  }
+  purgeQueue(): Observable<PurgeQueueState> {
+    return this.http.get<PurgeQueueState>(`${BASE}/recommendations/queue`);
+  }
+  purgeCancel(): Observable<PurgeQueueState> {
+    return this.http.delete<PurgeQueueState>(`${BASE}/recommendations/queue`);
   }
   posterUrl(itemId: number): string {
     return `${BASE}/items/${itemId}/poster`;

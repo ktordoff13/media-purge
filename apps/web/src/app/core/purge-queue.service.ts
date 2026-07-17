@@ -1,17 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { firstValueFrom } from 'rxjs';
 import { ApiService } from './api.service';
-
-export interface PurgeTask {
-  id: number;
-  title: string;
-}
+import { PurgeQueueState } from './models';
 
 /**
- * Sequential queue for recommendation approvals. Items are approved one
- * request at a time (file moves can take minutes across filesystems), and
- * progress is exposed as signals so the sidenav can show it app-wide.
+ * Client mirror of the server-side approval queue. Approvals are enqueued on
+ * the API (they keep running if this tab closes); this service polls the
+ * queue while it is active and exposes progress as signals for the sidenav.
  */
 @Injectable({ providedIn: 'root' })
 export class PurgeQueueService {
@@ -22,66 +17,100 @@ export class PurgeQueueService {
   readonly total = signal(0);
   readonly done = signal(0);
   readonly failed = signal(0);
-  readonly current = signal<PurgeTask | null>(null);
+  readonly current = signal<{ recommendationId: number; title: string } | null>(null);
   /** Rec ids queued or in flight — pages disable those rows' actions. */
   readonly pending = signal<ReadonlySet<number>>(new Set());
-  /** Bumped after every finished item so list pages know to reload. */
+  /** Bumped whenever the server finishes an item so list pages reload. */
   readonly completions = signal(0);
 
-  private queue: PurgeTask[] = [];
-  private dryRunCount = 0;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  private lastState: PurgeQueueState | null = null;
+  private lastErrorShown: string | null = null;
 
-  enqueue(tasks: PurgeTask[]): void {
-    const fresh = tasks.filter((t) => !this.pending().has(t.id));
-    if (!fresh.length) return;
-    const next = new Set(this.pending());
-    for (const t of fresh) next.add(t.id);
-    this.pending.set(next);
-    this.queue.push(...fresh);
-
-    if (this.active()) {
-      this.total.update((n) => n + fresh.length);
-      return;
-    }
-    this.total.set(fresh.length);
-    this.done.set(0);
-    this.failed.set(0);
-    this.dryRunCount = 0;
-    this.active.set(true);
-    void this.drain();
+  constructor() {
+    // Pick up a purge already running from another tab or a previous session.
+    this.refresh();
   }
 
-  private async drain(): Promise<void> {
-    for (let task = this.queue.shift(); task; task = this.queue.shift()) {
-      this.current.set(task);
-      try {
-        const res = await firstValueFrom(this.api.approve(task.id));
-        if (res.dryRun) this.dryRunCount++;
-      } catch (err) {
-        this.failed.update((n) => n + 1);
-        const message =
-          (err as { error?: { message?: string } })?.error?.message ?? 'Approve failed';
-        this.snack.open(`"${task.title}": ${message}`, 'OK', { duration: 8000 });
-      } finally {
-        const next = new Set(this.pending());
-        next.delete(task.id);
-        this.pending.set(next);
-        this.done.update((n) => n + 1);
-        this.completions.update((n) => n + 1);
-      }
-    }
-    this.current.set(null);
-    this.active.set(false);
-    this.snack.open(this.summary(), 'OK', { duration: 7000 });
+  enqueue(ids: number[]): void {
+    if (!ids.length) return;
+    this.api.purgeEnqueue(ids).subscribe({
+      next: (s) => this.apply(s),
+      error: (err) =>
+        this.snack.open(
+          (err as { error?: { message?: string } })?.error?.message ?? 'Failed to queue approvals',
+          'OK',
+          { duration: 8000 },
+        ),
+    });
   }
 
-  private summary(): string {
-    const failed = this.failed();
-    const moved = this.done() - failed;
-    let msg = this.dryRunCount
-      ? `Dry run: would move ${this.dryRunCount} item(s) to the recycle bin`
+  /** Drop the queued remainder; the item currently moving finishes. */
+  cancel(): void {
+    this.api.purgeCancel().subscribe({
+      next: (s) => {
+        this.apply(s);
+        if (s.active) {
+          this.snack.open(
+            `Canceled remaining approvals — finishing "${s.current?.title ?? 'current item'}"`,
+            'OK',
+            { duration: 6000 },
+          );
+        }
+      },
+      error: (err) =>
+        this.snack.open(
+          (err as { error?: { message?: string } })?.error?.message ?? 'Failed to cancel the queue',
+          'OK',
+          { duration: 8000 },
+        ),
+    });
+  }
+
+  private refresh(): void {
+    this.api.purgeQueue().subscribe({
+      next: (s) => this.apply(s),
+      // Keep polling through transient errors while a purge is running.
+      error: () => {
+        if (this.active()) this.scheduleNext();
+      },
+    });
+  }
+
+  private apply(s: PurgeQueueState): void {
+    const prev = this.lastState;
+    this.lastState = s;
+
+    if (prev && s.done !== prev.done) this.completions.update((n) => n + 1);
+    if (s.lastError && s.lastError !== this.lastErrorShown) {
+      this.lastErrorShown = s.lastError;
+      this.snack.open(s.lastError, 'OK', { duration: 8000 });
+    }
+    if (prev?.active && !s.active) {
+      this.snack.open(this.summary(s), 'OK', { duration: 7000 });
+    }
+
+    this.active.set(s.active);
+    this.total.set(s.total);
+    this.done.set(s.done);
+    this.failed.set(s.failed);
+    this.current.set(s.current);
+    this.pending.set(new Set(s.pendingIds));
+
+    if (s.active) this.scheduleNext();
+  }
+
+  private scheduleNext(): void {
+    if (this.timer) clearTimeout(this.timer);
+    this.timer = setTimeout(() => this.refresh(), 1500);
+  }
+
+  private summary(s: PurgeQueueState): string {
+    const moved = s.done - s.failed;
+    let msg = s.dryRun
+      ? `Dry run: would move ${s.dryRun} item(s) to the recycle bin`
       : `Moved ${moved} item(s) to the recycle bin`;
-    if (failed) msg += ` — ${failed} failed`;
+    if (s.failed) msg += ` — ${s.failed} failed`;
     return msg;
   }
 }

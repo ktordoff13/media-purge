@@ -18,6 +18,7 @@ import type { RecommendationStatus } from '../database/entities/recommendation.e
 import { MediaItem } from '../database/entities/media-item.entity';
 import { ProtectedItem } from '../database/entities/protected-item.entity';
 import { CleanupService } from '../cleanup/cleanup.service';
+import { PurgeJobsService } from '../cleanup/purge-jobs.service';
 import { ActivityService } from '../activity/activity.service';
 
 class BulkActionDto {
@@ -31,6 +32,13 @@ class BulkActionDto {
   action: 'approve' | 'dismiss';
 }
 
+class QueueApprovalsDto {
+  @ApiProperty({ type: [Number], example: [1, 2, 3] })
+  @IsArray()
+  @ArrayNotEmpty()
+  ids: number[];
+}
+
 @ApiTags('recommendations')
 @Controller('recommendations')
 export class RecommendationsController {
@@ -41,8 +49,35 @@ export class RecommendationsController {
     private readonly protectedItems: Repository<ProtectedItem>,
     @InjectRepository(MediaItem) private readonly items: Repository<MediaItem>,
     private readonly cleanup: CleanupService,
+    private readonly purgeJobs: PurgeJobsService,
     private readonly activity: ActivityService,
   ) {}
+
+  @Post('queue')
+  @ApiOperation({
+    summary: 'Queue recommendations for approval',
+    description:
+      'Enqueues approvals to run server-side, one at a time — the batch keeps going if the browser closes and resumes after a container restart. Returns the queue state.',
+  })
+  queueApprovals(@Body() dto: QueueApprovalsDto) {
+    return this.purgeJobs.enqueue(dto.ids);
+  }
+
+  @Get('queue')
+  @ApiOperation({ summary: 'Progress of the server-side approval queue' })
+  queueState() {
+    return this.purgeJobs.state();
+  }
+
+  @Delete('queue')
+  @ApiOperation({
+    summary: 'Cancel queued approvals',
+    description:
+      'Drops all approvals still waiting in the queue. The item currently being moved (if any) finishes — a half-moved item cannot be aborted safely.',
+  })
+  cancelQueue() {
+    return this.purgeJobs.cancel();
+  }
 
   @Get()
   @ApiOperation({

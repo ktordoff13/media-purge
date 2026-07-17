@@ -63,6 +63,34 @@ mat-nav-list a {
     color: var(--mat-sys-primary);
   }
 
+  .purge-spacer {
+    flex: 1;
+  }
+
+  .purge-cancel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--mat-sys-on-surface-variant);
+    cursor: pointer;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      background: color-mix(in srgb, var(--mat-sys-on-surface) 10%, transparent);
+    }
+  }
+
   .purge-title {
     font: var(--mat-sys-body-small);
     color: var(--mat-sys-on-surface-variant);

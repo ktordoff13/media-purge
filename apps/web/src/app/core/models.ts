@@ -133,6 +133,17 @@ export interface PathMapping {
   to: string;
 }
 
+export interface PurgeQueueState {
+  active: boolean;
+  total: number;
+  done: number;
+  failed: number;
+  dryRun: number;
+  current: { recommendationId: number; title: string } | null;
+  pendingIds: number[];
+  lastError: string | null;
+}
+
 export interface HealthInfo {
   status: string;
   uptime: number;

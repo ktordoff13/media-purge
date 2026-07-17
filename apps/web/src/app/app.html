@@ -39,6 +39,15 @@
         <div class="purge-label">
           <mat-icon inline>delete_sweep</mat-icon>
           Purging {{ purge.done() + 1 <= purge.total() ? purge.done() + 1 : purge.total() }} of {{ purge.total() }}
+          <span class="purge-spacer"></span>
+          <button
+            class="purge-cancel"
+            (click)="purge.cancel()"
+            matTooltip="Cancel remaining approvals — the item currently moving will finish"
+            aria-label="Cancel remaining approvals"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
         </div>
         <div class="purge-title">{{ purge.current()?.title }}</div>
         <mat-progress-bar
