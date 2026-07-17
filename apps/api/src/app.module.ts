@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, RequestMethod } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -34,6 +34,9 @@ const webDist =
     // for request traces) and LOG_FORMAT=json for machine-readable output
     // (default is pretty single-line for `docker logs`).
     LoggerModule.forRoot({
+      // nestjs-pino's default is the legacy '*' path, which Nest 11 only
+      // supports via a noisy auto-conversion warning at boot.
+      forRoutes: [{ path: '{*splat}', method: RequestMethod.ALL }],
       pinoHttp: {
         level: process.env.LOG_LEVEL ?? 'info',
         transport:
