@@ -22,6 +22,10 @@ LABEL org.opencontainers.image.title="Media Purge" \
       org.opencontainers.image.description="Rule-based media cleanup for Plex & Jellyfin — scan, recommend, reclaim storage safely." \
       org.opencontainers.image.source="https://github.com/ktordoff13/media-purge"
 
+# su-exec drops from root to PUID/PGID in the entrypoint when set (optional —
+# see entrypoint.sh). Runs as root otherwise, unchanged from before.
+RUN apk add --no-cache su-exec
+
 # Baked in by CI so the UI can show what's actually running.
 ARG APP_VERSION=dev
 ARG BUILD_SHA=""
@@ -38,6 +42,8 @@ WORKDIR /app
 COPY --from=build /build/node_modules ./node_modules
 COPY --from=build /build/apps/api/dist ./api
 COPY --from=build /build/apps/web/dist/web/browser ./web
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 VOLUME ["/config"]
 EXPOSE 8484
@@ -45,4 +51,5 @@ EXPOSE 8484
 HEALTHCHECK --interval=60s --timeout=10s --start-period=20s \
   CMD wget -qO- http://localhost:8484/api/v1/health || exit 1
 
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["node", "api/main.js"]

@@ -7,6 +7,7 @@ apps/*/dist
 apps/web/.angular
 docs
 docker
+!docker/entrypoint.sh
 *.md
 .dockerignore
 .claude

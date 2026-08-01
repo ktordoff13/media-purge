@@ -1,0 +1,30 @@
+services:
+  media-purge:
+    image: ghcr.io/ktordoff13/media-purge:latest
+    # Uncomment to build from source instead of the published image:
+    # build:
+    #   context: .
+    #   dockerfile: docker/Dockerfile
+    container_name: media-purge
+    restart: unless-stopped
+    ports:
+      - "8484:8484"
+    environment:
+      # Optional — omit both to run as root (fine on most NAS setups).
+      # Set them on Synology/TrueNAS/bare Linux to own files as your user
+      # instead of root: `id -u` / `id -g` on the host give the right values.
+      PUID: "1000"
+      PGID: "1000"
+    volumes:
+      - ./config:/config
+      # Point this at wherever your media actually lives. It must be the
+      # SAME path your Plex/Jellyfin container mounts it at, or set up a
+      # path mapping in Settings if the paths differ inside each container.
+      - /path/to/your/media:/media
+      # Keep the recycle bin on the SAME filesystem/share as the media
+      # mount above so approved deletions are instant moves, not copies.
+      - /path/to/your/media/.media-purge-bin:/recycle-bin
+      # Optional: mount Plex/Jellyfin appdata to enable server cache cleanup
+      # from the Maintenance page. See docs/setup.md.
+      # - /path/to/plex/appdata:/plex-appdata
+      # - /path/to/jellyfin/appdata:/jellyfin-appdata

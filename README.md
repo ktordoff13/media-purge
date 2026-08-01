@@ -33,6 +33,10 @@ deleted, *when*, and *why*. (There is an optional, purely-for-fun **local** AI a
 
 ## Quick start (Docker)
 
+Nothing about the app is unraid-specific — it's a standard container (API + SQLite + a static
+web UI, one port, three bind mounts) that runs the same on any Docker host: unraid, Synology,
+TrueNAS, or a plain Linux box.
+
 Prebuilt images are published to GHCR on every push to `main`:
 
 ```bash
@@ -42,6 +46,12 @@ docker run -d --name media-purge \
   -v /mnt/user/media:/media \
   -v /mnt/user/media/.media-purge-bin:/recycle-bin \
   ghcr.io/ktordoff13/media-purge:latest
+```
+
+Or with [`docker-compose.yml`](docker-compose.yml) — copy it, edit the volume paths, then:
+
+```bash
+docker compose up -d
 ```
 
 Or build locally:
@@ -55,6 +65,12 @@ docker run -d --name media-purge \
   -v /mnt/user/media/.media-purge-bin:/recycle-bin \
   media-purge
 ```
+
+Runs as root by default (fine on unraid and most single-user NAS setups). On Synology, TrueNAS,
+or anywhere else that cares about file ownership, set `PUID`/`PGID` env vars (`id -u` / `id -g`
+on the host) and the container drops to that user before touching `/config`; it does **not**
+chown your media share, since that mount can be huge — make sure the host already grants that
+user read/write on it.
 
 Open `http://<host>:8484`, add your server under **Settings → Media sources**, set **path
 mappings** if your media server sees the share at a different path (see
