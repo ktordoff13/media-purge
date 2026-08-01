@@ -1,0 +1,15 @@
+<CommunityApplications>
+  <Profile>
+    Media Purge — rule-based media cleanup for Plex and Jellyfin. This repository publishes a
+    single app: **Media Purge**, an unraid container that scans your libraries, produces
+    explainable delete recommendations (never watched, watched years ago, duplicates, low
+    quality, dead series...), and reclaims storage through a staged, reversible pipeline
+    (approve → recycle bin → purge after a retention window). Dry-run is on by default.
+
+    For support, bug reports, or feature requests, please use the GitHub issue tracker linked
+    below.
+  </Profile>
+  <Icon>https://raw.githubusercontent.com/ktordoff13/media-purge/main/docs/icon.png</Icon>
+  <WebPage>https://github.com/ktordoff13/media-purge</WebPage>
+  <Forum>https://github.com/ktordoff13/media-purge/issues</Forum>
+</CommunityApplications>

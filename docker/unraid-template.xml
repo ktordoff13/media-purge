@@ -20,6 +20,7 @@
   <Category>MediaApp:Other Tools:Utilities</Category>
   <WebUI>http://[IP]:[PORT:8484]/</WebUI>
   <Icon>https://raw.githubusercontent.com/ktordoff13/media-purge/main/docs/icon.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/ktordoff13/media-purge/main/docker/unraid-template.xml</TemplateURL>
   <ExtraParams/>
   <PostArgs/>
   <Config Name="WebUI Port" Target="8484" Default="8484" Mode="tcp" Description="Web UI and API port" Type="Port" Display="always" Required="true" Mask="false">8484</Config>

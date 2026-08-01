@@ -92,4 +92,4 @@ recommendations.
 
 ## License
 
-MIT
+[MIT](LICENSE)
